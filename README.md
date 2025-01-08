@@ -19,6 +19,7 @@ A modern web interface for publishing lyrics to the LRCLIB database. Built with 
 - Svelte + TypeScript
 - TailwindCSS for styling
 - Web Workers for proof-of-work computation
+- Rust for proof-of-work challenge generation
 
 ### Key Components
 
