@@ -1,0 +1,15 @@
+{
+  "name": "lrclibup-wasm",
+  "type": "module",
+  "version": "0.1.0",
+  "files": [
+    "lrclibup_wasm_bg.wasm",
+    "lrclibup_wasm.js",
+    "lrclibup_wasm.d.ts"
+  ],
+  "main": "lrclibup_wasm.js",
+  "types": "lrclibup_wasm.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}
