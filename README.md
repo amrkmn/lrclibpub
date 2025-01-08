@@ -2,6 +2,9 @@
 
 A modern web interface for publishing lyrics to the LRCLIB database. Built with Svelte and TailwindCSS.
 
+<img width="1552" alt="image" src="https://github.com/user-attachments/assets/f8a176e3-029e-44a8-909c-c23e6180fdd0" />
+
+
 ## Features
 
 - Clean, user-friendly interface for submitting lyrics
