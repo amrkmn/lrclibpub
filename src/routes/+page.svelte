@@ -252,7 +252,7 @@
         <div class="fixed bottom-4 right-4 flex flex-col gap-2 z-10">
           {#if error}
             <div
-              class="bg-white p-4 rounded-lg shadow-lg border border-red-200 flex items-center gap-2 text-red-700 animate-fade-in"
+              class="bg-white p-4 rounded-lg shadow-lg border border-red-200 flex items-center gap-2 text-red-700 animate-fade-in pr-5"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -275,7 +275,7 @@
 
           {#if success}
             <div
-              class="bg-white p-4 rounded-lg shadow-lg border border-green-200 flex items-center gap-2 text-green-700 animate-fade-in"
+              class="bg-white p-4 rounded-lg shadow-lg border border-green-200 flex items-center gap-2 text-green-700 animate-fade-in pr-5"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -298,7 +298,7 @@
 
           {#if isSubmitting}
             <div
-              class="fixed bottom-4 right-4 bg-white p-4 rounded-lg shadow-lg border border-indigo-200"
+              class="fixed bottom-4 right-4 bg-white p-4 rounded-lg shadow-lg border border-indigo-200 pr-5"
             >
               <div class="flex items-center gap-3">
                 <div
