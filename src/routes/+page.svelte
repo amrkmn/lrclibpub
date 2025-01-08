@@ -1,8 +1,6 @@
 <script lang="ts">
-  import { browser } from "$app/environment";
   import { onMount } from "svelte";
   import type { FormData, Challenge, PublishResponse } from "$lib/types";
-  import { solveChallenge } from "$lib/utils";
   import { parseLRCFile } from "$lib/lrc";
 
   let formData: FormData = {
