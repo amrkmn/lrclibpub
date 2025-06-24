@@ -49,9 +49,13 @@
 		const urlParams = new URLSearchParams(window.location.search);
 		const titleParam = urlParams.get("title");
 		const artistParam = urlParams.get("artist");
+		const albumParam = urlParams.get("album");
+		const durationParam = urlParams.get("duration");
 
 		if (titleParam) formData.trackName = decodeURIComponent(titleParam);
 		if (artistParam) formData.artistName = decodeURIComponent(artistParam);
+		if (albumParam) formData.albumName = decodeURIComponent(albumParam);
+		if (durationParam) formData.duration = decodeURIComponent(durationParam);
 	});
 
 	async function requestChallenge(): Promise<Challenge> {
