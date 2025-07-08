@@ -4,27 +4,26 @@ A modern static web interface for publishing lyrics to the LRCLIB database. Buil
 
 <img width="1552" alt="image" src="https://github.com/user-attachments/assets/f8a176e3-029e-44a8-909c-c23e6180fdd0" />
 
-
 ## Features
 
-- Clean, user-friendly interface for submitting lyrics
-- Support for both plain and synced (LRC) lyrics
-- LRC file upload and parsing
-- Proof-of-work challenge system to prevent spam
-- Real-time submission progress tracking
-- Form validation and error handling
-- Responsive design
-- **Static site generation** - no server required
+-   Clean, user-friendly interface for submitting lyrics
+-   Support for both plain and synced (LRC) lyrics
+-   LRC file upload and parsing
+-   Proof-of-work challenge system to prevent spam
+-   Real-time submission progress tracking
+-   Form validation and error handling
+-   Responsive design
+-   **Static site generation** - no server required
 
 ## Technical Details
 
 ### Stack
 
-- Svelte + TypeScript (Static Site Generation)
-- TailwindCSS for styling
-- Web Workers for proof-of-work computation
-- Zig WebAssembly for proof-of-work challenge generation
-- Direct LRCLIB API integration via CORS proxy (client-side only)
+-   Svelte + TypeScript (Static Site Generation)
+-   TailwindCSS for styling
+-   Web Workers for proof-of-work computation
+-   Zig WebAssembly for proof-of-work challenge generation
+-   Direct LRCLIB API integration via CORS proxy (client-side only)
 
 ### Key Components
 
@@ -32,33 +31,33 @@ A modern static web interface for publishing lyrics to the LRCLIB database. Buil
 
 The application handles the following data fields:
 
-- Track Name (required)
-- Artist Name (required)
-- Album Name (optional)
-- Duration in seconds (optional)
-- Plain Lyrics
-- Synced Lyrics (LRC format)
+-   Track Name (required)
+-   Artist Name (required)
+-   Album Name (optional)
+-   Duration in seconds (optional)
+-   Plain Lyrics
+-   Synced Lyrics (LRC format)
 
 A user can either fill in the fields manually or upload an LRC file to auto-fill the form.
 
 #### Proof of Work System
 
-- Implements a challenge-response mechanism
-- Uses Web Workers for background computation
-- Real-time progress tracking with hash rate display
+-   Implements a challenge-response mechanism
+-   Uses Web Workers for background computation
+-   Real-time progress tracking with hash rate display
 
 #### File Handling
 
-- Supports .lrc file uploads
-- Automatic parsing of LRC metadata and lyrics
-- Auto-fills form fields from LRC metadata
+-   Supports .lrc file uploads
+-   Automatic parsing of LRC metadata and lyrics
+-   Auto-fills form fields from LRC metadata
 
 ### API Integration
 
 Integrates directly with LRCLIB API endpoints (client-side):
 
-- `https://lrclib.net/api/request-challenge` - Gets proof-of-work challenge
-- `https://lrclib.net/api/publish` - Publishes lyrics with solved challenge token
+-   `https://lrclib.net/api/request-challenge` - Gets proof-of-work challenge
+-   `https://lrclib.net/api/publish` - Publishes lyrics with solved challenge token
 
 **Note**: API calls are made through `corsproxy.io` to bypass CORS restrictions in browsers.
 
@@ -66,11 +65,11 @@ Integrates directly with LRCLIB API endpoints (client-side):
 
 This is a static site that can be deployed to any static hosting provider:
 
-- **GitHub Pages**
-- **Netlify**
-- **Vercel**
-- **Cloudflare Pages**
-- **Any web server** (Apache, Nginx, etc.)
+-   **GitHub Pages**
+-   **Netlify**
+-   **Vercel**
+-   **Cloudflare Pages**
+-   **Any web server** (Apache, Nginx, etc.)
 
 Simply build the project and serve the `build` directory.
 
@@ -78,9 +77,9 @@ Simply build the project and serve the `build` directory.
 
 1. Fill in the required track and artist information
 2. Add lyrics either by:
-   - Pasting plain lyrics
-   - Pasting synced lyrics in LRC format
-   - Uploading an LRC file
+    - Pasting plain lyrics
+    - Pasting synced lyrics in LRC format
+    - Uploading an LRC file
 3. Click "Publish Lyrics" to submit
 4. Wait for the proof-of-work challenge to complete
 
@@ -113,10 +112,12 @@ The application uses a pre-built WASM module that is committed to the repository
 ### WASM Development
 
 The WASM module is **pre-built and committed** to git. You only need to rebuild it when:
-- Modifying Zig source code in `wasm/src/`
-- Updating the build configuration in `wasm/build.zig`
+
+-   Modifying Zig source code in `wasm/src/`
+-   Updating the build configuration in `wasm/build.zig`
 
 To rebuild WASM:
+
 ```bash
 # Rebuild WASM module (requires Zig installation)
 npm run build:wasm
@@ -127,14 +128,15 @@ git commit -m "update: rebuild WASM module"
 ```
 
 ### Prerequisites for WASM Development
-- **Zig** (latest stable) - Download from: https://ziglang.org/download/
+
+-   **Zig** (latest stable) - Download from: https://ziglang.org/download/
 
 ## Notes
 
-- Publishing requires solving a proof-of-work challenge which may take several minutes
-- Both lyrics fields can be left empty for instrumental tracks
-- The interface provides real-time feedback during the publishing process
-- Form data is validated before submission
+-   Publishing requires solving a proof-of-work challenge which may take several minutes
+-   Both lyrics fields can be left empty for instrumental tracks
+-   The interface provides real-time feedback during the publishing process
+-   Form data is validated before submission
 
 ## License
 
