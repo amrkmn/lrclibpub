@@ -115,6 +115,7 @@
                     } else if (type === "success") {
                         // Calculate solve time
                         solveTime = Date.now() - solveProgress.startTime;
+                        solveProgress.nonce = nonce;
                         resolve(nonce);
                     } else if (type === "error") {
                         reject(new Error(error));
@@ -284,7 +285,7 @@
                                 <div class="font-medium">Lyrics published successfully!</div>
                                 {#if solveTime > 0}
                                     <div class="text-sm text-green-600">
-                                        Proof-of-work solved in {formatSolveTime(solveTime)}
+                                        Proof-of-work solved in {formatSolveTime(solveTime)} with {solveProgress.nonce} attempts.
                                     </div>
                                 {/if}
                             </div>
@@ -302,6 +303,8 @@
                                             <span>{((Date.now() - solveProgress.startTime) / 1000).toFixed(1)}s</span>
                                             <span>•</span>
                                             <span>{formatHashRate(hashRate)} hashes/s</span>
+                                            <span>•</span>
+                                            <span>Attempts: {solveProgress.attempts}</span>
                                         </div>
                                     {:else}
                                         <p class="text-sm font-medium text-indigo-800">Publishing...</p>
