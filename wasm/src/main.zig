@@ -61,10 +61,10 @@ export fn solve_challenge(prefix_ptr: [*]const u8, prefix_len: u32, target_hex_p
         context.update(input);
         context.final(&hashed);
 
-        // // Report progress every 10,000 attempts
-        // if (nonce % 10000 == 0) {
-        //     print(@floatFromInt(nonce));
-        // }
+        // Report progress every 10,000 attempts
+        if (nonce % 10000 == 0) {
+            print(@floatFromInt(nonce));
+        }
 
         if (verify_nonce(&hashed, &target)) {
             break;
