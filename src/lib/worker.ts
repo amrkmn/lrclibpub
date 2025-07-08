@@ -4,7 +4,7 @@ let lastUpdate = Date.now();
 
 async function initWasm() {
     if (!wasmModule) {
-        const wasmResponse = await fetch("/wasm/lrclibup_wasm.wasm");
+        const wasmResponse = await fetch("/wasm/lrclibpub.wasm");
         const wasmBytes = await wasmResponse.arrayBuffer();
 
         const importObject = {

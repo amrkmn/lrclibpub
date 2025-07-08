@@ -35,9 +35,9 @@ try {
     execSync("zig build -Doptimize=ReleaseFast", { stdio: "inherit" });
 
     // Copy the built WASM file
-    const srcPath = join(wasmDir, "zig-out", "bin", "lrclibup_wasm.wasm");
+    const srcPath = join(wasmDir, "zig-out", "bin", "lrclibpub.wasm");
     const destDir = join(projectRoot, "static", "wasm");
-    const destPath = join(destDir, "lrclibup_wasm.wasm");
+    const destPath = join(destDir, "lrclibpub.wasm");
 
     if (!existsSync(srcPath)) {
         throw new Error(`Built WASM file not found: ${srcPath}`);

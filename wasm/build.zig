@@ -9,7 +9,7 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     const wasm_lib = b.addExecutable(.{
-        .name = "lrclibup_wasm",
+        .name = "lrclibpub",
         .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = optimize,
