@@ -96,15 +96,36 @@ npm run build
 
 # Preview production build
 npm run preview
+
+# Rebuild WASM (only when needed)
+npm run build:wasm
 ```
 
 ## Building for Production
 
-The build process creates a static site in the `build` directory:
+The application uses a pre-built WASM module that is committed to the repository:
 
-1. **Build WASM module**: `npm run build:wasm`
-2. **Build static site**: `npm run build`
-3. **Deploy**: Upload the `build` directory to your hosting provider
+1. **Standard build**: `npm run build` (uses committed WASM)
+2. **Deploy**: Upload the `build` directory to your hosting provider
+
+### WASM Development
+
+The WASM module is **pre-built and committed** to git. You only need to rebuild it when:
+- Modifying Zig source code in `src/lib/wasm/src/`
+- Updating the build configuration in `src/lib/wasm/build.zig`
+
+To rebuild WASM:
+```bash
+# Rebuild WASM module (requires Zig installation)
+npm run build:wasm
+
+# Then commit the updated WASM file
+git add static/wasm/lrclibup_wasm.wasm
+git commit -m "update: rebuild WASM module"
+```
+
+### Prerequisites for WASM Development
+- **Zig** (latest stable) - Download from: https://ziglang.org/download/
 
 ## Notes
 

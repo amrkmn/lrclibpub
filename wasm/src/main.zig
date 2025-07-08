@@ -21,7 +21,7 @@ fn verify_nonce(result: []const u8, target: []const u8) bool {
 }
 
 // Convert hex string to bytes (equivalent to Rust's HEXUPPER.decode)
-fn hexToBytes(out: []u8, hex_str: []const u8) !void {
+fn hex_to_bytes(out: []u8, hex_str: []const u8) !void {
     if (hex_str.len % 2 != 0) return error.InvalidLength;
     if (out.len != hex_str.len / 2) return error.InvalidLength;
 
@@ -44,7 +44,7 @@ export fn solve_challenge(prefix_ptr: [*]const u8, prefix_len: u32, target_hex_p
     const target_hex = target_hex_ptr[0..target_hex_len];
 
     // Convert hex target to bytes
-    hexToBytes(&target, target_hex) catch {
+    hex_to_bytes(&target, target_hex) catch {
         return 0; // Return 0 on error
     };
 
