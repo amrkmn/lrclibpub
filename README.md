@@ -24,7 +24,7 @@ A modern static web interface for publishing lyrics to the LRCLIB database. Buil
 - TailwindCSS for styling
 - Web Workers for proof-of-work computation
 - Zig WebAssembly for proof-of-work challenge generation
-- Direct LRCLIB API integration (client-side only)
+- Direct LRCLIB API integration via CORS proxy (client-side only)
 
 ### Key Components
 
@@ -59,6 +59,8 @@ Integrates directly with LRCLIB API endpoints (client-side):
 
 - `https://lrclib.net/api/request-challenge` - Gets proof-of-work challenge
 - `https://lrclib.net/api/publish` - Publishes lyrics with solved challenge token
+
+**Note**: API calls are made through `corsproxy.io` to bypass CORS restrictions in browsers.
 
 ## Deployment
 

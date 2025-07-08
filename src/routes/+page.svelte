@@ -61,7 +61,7 @@
 
     async function requestChallenge(): Promise<Challenge> {
         try {
-            const response = await fetch("https://lrclib.net/api/request-challenge", {
+            const response = await fetch("/api/challenge", {
                 method: "POST",
             });
             return await response.json();
@@ -135,13 +135,12 @@
 
             const publishToken = `${challenge.prefix}:${nonce}`;
 
-            // Submit lyrics directly to LRCLIB API
-            const response = await fetch("https://lrclib.net/api/publish", {
+            // Submit lyrics through our API endpoint
+            const response = await fetch("/api/publish", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     "X-Publish-Token": publishToken,
-                    "Lrclib-Client": "LRCLIBpub v1.0.0 (https://github.com/amrkmn/lrclibpub)",
                 },
                 body: JSON.stringify({
                     trackName: formData.trackName.trim(),
