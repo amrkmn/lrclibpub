@@ -144,4 +144,6 @@ GPL-3.0 License
 
 ## Credits
 
+This project is based on [lrclibup](https://github.com/boidushya/lrclibup) by [@boidushya](https://github.com/boidushya).
+
 Powered by [BetterLyrics](https://better-lyrics.boidu.dev) - A browser extension for enhanced lyrics display on YouTube Music.

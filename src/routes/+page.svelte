@@ -260,6 +260,10 @@
             effort, and your contributions enhance the database for everyone.
         </p>
 
+        <p class="text-indigo-600 text-sm mb-6">
+            Based on <a href="https://github.com/boidushya/lrclibup" target="_blank" rel="noopener noreferrer" class="underline">lrclibup</a> by <a href="https://github.com/boidushya" target="_blank" rel="noopener noreferrer" class="underline">@boidushya</a>.
+        </p>
+
         <form on:submit|preventDefault={handleSubmit} class="space-y-6 rounded-lg shadow-sm">
             {#if error || success || isSubmitting}
                 <div class="fixed bottom-4 right-4 flex flex-col gap-2 z-10">
