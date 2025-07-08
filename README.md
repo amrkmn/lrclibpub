@@ -1,6 +1,6 @@
 # LRCLIBpub
 
-A modern web interface for publishing lyrics to the LRCLIB database. Built with Svelte and TailwindCSS.
+A modern static web interface for publishing lyrics to the LRCLIB database. Built with Svelte and TailwindCSS.
 
 <img width="1552" alt="image" src="https://github.com/user-attachments/assets/f8a176e3-029e-44a8-909c-c23e6180fdd0" />
 
@@ -14,15 +14,17 @@ A modern web interface for publishing lyrics to the LRCLIB database. Built with 
 - Real-time submission progress tracking
 - Form validation and error handling
 - Responsive design
+- **Static site generation** - no server required
 
 ## Technical Details
 
 ### Stack
 
-- Svelte + TypeScript
+- Svelte + TypeScript (Static Site Generation)
 - TailwindCSS for styling
 - Web Workers for proof-of-work computation
-- Rust for proof-of-work challenge generation
+- Zig WebAssembly for proof-of-work challenge generation
+- Direct LRCLIB API integration (client-side only)
 
 ### Key Components
 
@@ -53,10 +55,22 @@ A user can either fill in the fields manually or upload an LRC file to auto-fill
 
 ### API Integration
 
-Integrates with LRCLIB API endpoints:
+Integrates directly with LRCLIB API endpoints (client-side):
 
-- `/api/request-challenge` - Gets proof-of-work challenge
-- `/api/publish` - Publishes lyrics with solved challenge token
+- `https://lrclib.net/api/request-challenge` - Gets proof-of-work challenge
+- `https://lrclib.net/api/publish` - Publishes lyrics with solved challenge token
+
+## Deployment
+
+This is a static site that can be deployed to any static hosting provider:
+
+- **GitHub Pages**
+- **Netlify**
+- **Vercel**
+- **Cloudflare Pages**
+- **Any web server** (Apache, Nginx, etc.)
+
+Simply build the project and serve the `build` directory.
 
 ## Usage
 
@@ -77,9 +91,20 @@ npm install
 # Start development server
 npm run dev
 
-# Build for production
+# Build for production (static site)
 npm run build
+
+# Preview production build
+npm run preview
 ```
+
+## Building for Production
+
+The build process creates a static site in the `build` directory:
+
+1. **Build WASM module**: `npm run build:wasm`
+2. **Build static site**: `npm run build`
+3. **Deploy**: Upload the `build` directory to your hosting provider
 
 ## Notes
 
