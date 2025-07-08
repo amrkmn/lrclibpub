@@ -111,8 +111,8 @@ The application uses a pre-built WASM module that is committed to the repository
 ### WASM Development
 
 The WASM module is **pre-built and committed** to git. You only need to rebuild it when:
-- Modifying Zig source code in `src/lib/wasm/src/`
-- Updating the build configuration in `src/lib/wasm/build.zig`
+- Modifying Zig source code in `wasm/src/`
+- Updating the build configuration in `wasm/build.zig`
 
 To rebuild WASM:
 ```bash
