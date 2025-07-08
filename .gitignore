@@ -24,3 +24,7 @@ vite.config.ts.timestamp-*
 
 # Wasm builds
 src/lib/wasm/target
+
+# Zig
+.zig-cache
+zig-out

@@ -1,4 +1,4 @@
-# LRCLIBup
+# LRCLIBpub
 
 A modern web interface for publishing lyrics to the LRCLIB database. Built with Svelte and TailwindCSS.
 

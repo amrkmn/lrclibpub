@@ -16,6 +16,7 @@
 	let error: string | null = null;
 	let success = false;
 	let solveProgress = { attempts: 0, nonce: 0, startTime: 0 };
+	let solveTime: number = 0; // Track solving time in milliseconds
 
 	let errorTimeout: number;
 	let successTimeout: number;
@@ -120,6 +121,8 @@
 							startTime: solveProgress.startTime || Date.now(),
 						};
 					} else if (type === "success") {
+						// Calculate solve time
+						solveTime = Date.now() - solveProgress.startTime;
 						resolve(nonce);
 					} else if (type === "error") {
 						reject(new Error(error));
@@ -194,6 +197,18 @@
 		}
 		return hashRate.toString();
 	}
+
+	function formatSolveTime(timeMs: number): string {
+		if (timeMs < 1000) {
+			return `${timeMs}ms`;
+		} else if (timeMs < 60000) {
+			return `${(timeMs / 1000).toFixed(1)}s`;
+		} else {
+			const minutes = Math.floor(timeMs / 60000);
+			const seconds = Math.floor((timeMs % 60000) / 1000);
+			return `${minutes}m ${seconds}s`;
+		}
+	}
 </script>
 
 <div class="min-h-screen bg-[#E0E7FF] text-indigo-900 p-6">
@@ -217,7 +232,7 @@
 					/>
 				</svg>
 
-				LRCLIBup
+				LRCLIBpub
 			</h1>
 			<a
 				href="https://better-lyrics.boidu.dev"
@@ -241,7 +256,7 @@
 		</div>
 
 		<p class="text-indigo-800 mb-6">
-			Welcome to LRCLIBup - a simple web interface to publish lyrics to the
+			Welcome to LRCLIBpub - a simple web interface to publish lyrics to the
 			<a
 				href="https://lrclib.net"
 				target="_blank"
@@ -301,7 +316,14 @@
 								/>
 							</svg>
 
-							Lyrics published successfully!
+							<div>
+								<div class="font-medium">Lyrics published successfully!</div>
+								{#if solveTime > 0}
+									<div class="text-sm text-green-600">
+										Proof-of-work solved in {formatSolveTime(solveTime)}
+									</div>
+								{/if}
+							</div>
 						</div>
 					{/if}
 

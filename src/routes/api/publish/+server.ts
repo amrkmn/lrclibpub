@@ -46,7 +46,7 @@ export const POST: RequestHandler = async ({ request }) => {
         "Content-Type": "application/json",
         "X-Publish-Token": publishToken,
         "Lrclib-Client":
-          "LRCLIBup v1.0.0 (https://github.com/boidushya/lrclibup)",
+          "LRCLIBpub v1.0.0 (https://github.com/amrkmn/lrclibpub)",
       },
       body: JSON.stringify({
         trackName: data.trackName.trim(),
