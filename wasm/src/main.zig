@@ -2,7 +2,7 @@ const std = @import("std");
 
 // Console log function imported from JavaScript environment
 // Used to report progress back to the web worker
-extern "env" fn console_log(value: f64) void;
+extern "env" fn print(value: f64) void;
 
 // Verify if the hash result meets the target difficulty
 fn verify_nonce(result: []const u8, target: []const u8) bool {
@@ -61,10 +61,10 @@ export fn solve_challenge(prefix_ptr: [*]const u8, prefix_len: u32, target_hex_p
         context.update(input);
         context.final(&hashed);
 
-        // Report progress every 10,000 attempts
-        if (nonce % 10000 == 0) {
-            console_log(@floatFromInt(nonce));
-        }
+        // // Report progress every 10,000 attempts
+        // if (nonce % 10000 == 0) {
+        //     print(@floatFromInt(nonce));
+        // }
 
         if (verify_nonce(&hashed, &target)) {
             break;

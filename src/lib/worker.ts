@@ -9,7 +9,7 @@ async function initWasm() {
 
         const importObject = {
             env: {
-                console_log: (value: number) => {
+                print: (value: number) => {
                     console.log(value);
                 },
             },
