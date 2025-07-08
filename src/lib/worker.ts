@@ -16,9 +16,7 @@ async function initWasm() {
                     const elapsed = now - startTime;
                     const rate = value / (elapsed / 1000);
 
-                    // Report progress less frequently to reduce overhead
-                    if (now - lastUpdate >= 2000) {
-                        // Every 2 seconds instead of 1
+                    if (now - lastUpdate >= 800) {
                         self.postMessage({
                             type: "progress",
                             attempts: value,

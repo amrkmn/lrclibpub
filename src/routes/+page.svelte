@@ -103,11 +103,10 @@
                 if (!worker) return;
 
                 worker.onmessage = (e) => {
-                    const { type, attempts, time, nonce, error } = e.data;
+                    const { type, attempts, rate, nonce, error } = e.data;
 
                     if (type === "progress") {
-                        const elapsedTime = (Date.now() - solveProgress.startTime) / 1000;
-                        hashRate = elapsedTime > 0 ? attempts / elapsedTime : 0;
+                        hashRate = rate;
                         solveProgress = {
                             attempts,
                             nonce: 0,
