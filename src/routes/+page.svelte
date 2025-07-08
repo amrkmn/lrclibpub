@@ -1,6 +1,6 @@
 <script lang="ts">
     import { parseLRCFile } from "$lib/lrc";
-    import type { Challenge, FormData, PublishResponse } from "$lib/types";
+    import type { Challenge, FormData } from "$lib/types";
     import { onMount } from "svelte";
 
     let formData: FormData = {
@@ -17,6 +17,7 @@
     let success = false;
     let solveProgress = { attempts: 0, nonce: 0, startTime: 0 };
     let solveTime: number = 0; // Track solving time in milliseconds
+    let hashRate = 0; // Track hashrate
 
     let errorTimeout: number;
     let successTimeout: number;
@@ -38,15 +39,6 @@
     }
 
     onMount(() => {
-        // @ts-ignore
-        window.publishProgress = (attempts: number, nonce: number) => {
-            solveProgress = {
-                attempts,
-                nonce,
-                startTime: solveProgress.startTime || Date.now(),
-            };
-        };
-
         const urlParams = new URLSearchParams(window.location.search);
         const titleParam = urlParams.get("title");
         const artistParam = urlParams.get("artist");
@@ -101,6 +93,7 @@
 
             // Solve challenge using Web Worker
             solveProgress = { attempts: 0, nonce: 0, startTime: Date.now() };
+            hashRate = 0;
 
             worker = new Worker(new URL("../lib/worker.ts", import.meta.url), {
                 type: "module",
@@ -113,6 +106,8 @@
                     const { type, attempts, time, nonce, error } = e.data;
 
                     if (type === "progress") {
+                        const elapsedTime = (Date.now() - solveProgress.startTime) / 1000;
+                        hashRate = elapsedTime > 0 ? attempts / elapsedTime : 0;
                         solveProgress = {
                             attempts,
                             nonce: 0,
@@ -232,25 +227,6 @@
 
                 LRCLIBpub
             </h1>
-            <a
-                href="https://better-lyrics.boidu.dev"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-700 text-white rounded-2xl
-    border border-indigo-700
-    shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_1px_1px_rgba(46,54,80,0.15)]
-    hover:bg-indigo-800 hover:border-indigo-800
-    focus:bg-indigo-800 focus:border-indigo-800
-    focus:shadow-[inset_0_1px_0_rgba(255,255,255,0.15),0_1px_1px_rgba(46,54,80,0.075),0_0_0_0.2rem_rgba(99,102,241,0.5)]
-    active:bg-indigo-800 active:border-indigo-800
-    active:shadow-[inset_0_3px_5px_rgba(46,54,80,0.125)]
-    active:focus:shadow-[inset_0_3px_5px_rgba(46,54,80,0.125),0_0_0_0.2rem_rgba(99,102,241,0.5)]
-    transition-all duration-150 font-medium"
-            >
-                Powered by BetterLyrics
-
-                <img src="/favicon.png" alt="BetterLyrics" class="size-6 ml-1" />
-            </a>
         </div>
 
         <p class="text-indigo-800 mb-6">
@@ -326,7 +302,7 @@
                                         <div class="flex gap-2 text-xs text-indigo-600 justify-between">
                                             <span>{((Date.now() - solveProgress.startTime) / 1000).toFixed(1)}s</span>
                                             <span>•</span>
-                                            <span>{formatHashRate(solveProgress.attempts)} hashes/s</span>
+                                            <span>{formatHashRate(hashRate)} hashes/s</span>
                                         </div>
                                     {:else}
                                         <p class="text-sm font-medium text-indigo-800">Publishing...</p>
@@ -468,5 +444,23 @@
                 {isSubmitting ? "Publishing, this might take a while..." : "Publish Lyrics"}
             </button>
         </form>
+
+        <footer class="mt-8 pt-8 border-t border-indigo-200">
+            <div class="space-y-4 text-center">
+                <p class="text-sm text-indigo-800/70">
+                    Powered by <a href="https://better-lyrics.boidu.dev" target="_blank" class="text-indigo-600 hover:underline">
+                        BetterLyrics
+                    </a>
+                </p>
+                <p class="text-sm text-indigo-800/70">
+                    This project is a fork of
+                    <a href="https://github.com/boidushya/lrclibup" target="_blank" class="text-indigo-600 hover:underline">
+                        lrclibup
+                    </a>
+                    and is open source on
+                    <a href="https://github.com/amrkmn/lrclibpub" target="_blank" class="text-indigo-600 hover:underline"> GitHub </a>
+                </p>
+            </div>
+        </footer>
     </div>
 </div>

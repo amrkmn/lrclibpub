@@ -1,6 +1,8 @@
 # LRCLIBpub
 
-A modern static web interface for publishing lyrics to the LRCLIB database. Built with Svelte and TailwindCSS.
+A modern web interface for publishing lyrics to the LRCLIB database. Built with Svelte and TailwindCSS.
+
+> **_NOTE_**: This project is a fork of [lrclibup](https://github.com/boidushya/lrclibup) by [@boidushya](https://github.com/boidushya)
 
 <img width="1552" alt="image" src="https://github.com/user-attachments/assets/f8a176e3-029e-44a8-909c-c23e6180fdd0" />
 
@@ -121,10 +123,6 @@ To rebuild WASM:
 ```bash
 # Rebuild WASM module (requires Zig installation)
 npm run build:wasm
-
-# Then commit the updated WASM file
-git add static/wasm/lrclibup_wasm.wasm
-git commit -m "update: rebuild WASM module"
 ```
 
 ### Prerequisites for WASM Development
