@@ -84,8 +84,3 @@ export fn solve_challenge(
 export fn get_result_length() u32 {
     return result_len;
 }
-
-// Add a function to check memory usage
-export fn get_memory_usage() u32 {
-    return @intCast(@intFromPtr(&result_buffer)); // Simple memory pointer check
-}
