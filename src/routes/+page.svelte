@@ -1,6 +1,7 @@
 <script lang="ts">
     import { parseLRCFile } from "$lib/lrc";
     import type { Challenge, FormData } from "$lib/types";
+    import { numify } from "numify";
     import { onMount } from "svelte";
 
     let formData: FormData = {
@@ -15,9 +16,8 @@
     let isSubmitting = false;
     let error: string | null = null;
     let success = false;
-    let solveProgress = { attempts: 0, nonce: 0, startTime: 0 };
+    let solveProgress = { attempts: 0, nonce: 0, startTime: 0, rate: 0 };
     let solveTime: number = 0; // Track solving time in milliseconds
-    let hashRate = 0; // Track hashrate
 
     let errorTimeout: number;
     let successTimeout: number;
@@ -35,6 +35,7 @@
         if (successTimeout) clearTimeout(successTimeout);
         successTimeout = setTimeout(() => {
             success = false;
+            solveProgress = { attempts: 0, nonce: 0, startTime: 0, rate: 0 };
         }, 5000) as unknown as number;
     }
 
@@ -92,8 +93,7 @@
             const challenge = await requestChallenge();
 
             // Solve challenge using Web Worker
-            solveProgress = { attempts: 0, nonce: 0, startTime: Date.now() };
-            hashRate = 0;
+            solveProgress = { attempts: 0, nonce: 0, startTime: Date.now(), rate: 0 };
 
             worker = new Worker(new URL("../lib/worker.ts", import.meta.url), {
                 type: "module",
@@ -106,8 +106,8 @@
                     const { type, attempts, rate, nonce, error } = e.data;
 
                     if (type === "progress") {
-                        hashRate = rate;
                         solveProgress = {
+                            rate,
                             attempts,
                             nonce: 0,
                             startTime: solveProgress.startTime || Date.now(),
@@ -302,7 +302,7 @@
                                         <div class="flex gap-2 text-xs text-indigo-600 justify-between">
                                             <span>{((Date.now() - solveProgress.startTime) / 1000).toFixed(1)}s</span>
                                             <span>•</span>
-                                            <span>{formatHashRate(hashRate)} hashes/s</span>
+                                            <span>{numify(solveProgress.rate)} hashes/s</span>
                                             <span>•</span>
                                             <span>Attempts: {solveProgress.attempts}</span>
                                         </div>
