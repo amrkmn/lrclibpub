@@ -8,7 +8,7 @@ var result_buffer: [64]u8 = undefined;
 var result_len: u32 = 0;
 
 // Compare hash result with target (left-to-right, like Rust)
-fn verify_nonce(result: []const u8, target: []const u8) bool {
+fn verifyNonce(result: []const u8, target: []const u8) bool {
     if (result.len != target.len) return false;
 
     // Compare from most significant bytes first
@@ -20,7 +20,7 @@ fn verify_nonce(result: []const u8, target: []const u8) bool {
 }
 
 // Convert hex string to bytes
-fn hex_to_bytes(out: []u8, hex_str: []const u8) !void {
+fn hexToBytes(out: []u8, hex_str: []const u8) !void {
     if (hex_str.len % 2 != 0 or out.len != hex_str.len / 2)
         return error.InvalidLength;
 
@@ -32,7 +32,7 @@ fn hex_to_bytes(out: []u8, hex_str: []const u8) !void {
 }
 
 // Solve the proof-of-work challenge
-export fn solve_challenge(
+export fn solveChallenge(
     prefix_ptr: [*]const u8,
     prefix_len: u32,
     target_hex_ptr: [*]const u8,
@@ -47,7 +47,7 @@ export fn solve_challenge(
     const target_hex = target_hex_ptr[0..target_hex_len];
 
     // Decode target hex string
-    hex_to_bytes(&target, target_hex) catch return 0;
+    hexToBytes(&target, target_hex) catch return 0;
 
     const prefix_len_usize = @as(usize, prefix_len);
     @memcpy(input_buffer[0..prefix_len_usize], prefix);
@@ -70,7 +70,7 @@ export fn solve_challenge(
             print(@floatFromInt(nonce));
         }
 
-        if (verify_nonce(&hashed, &target)) break;
+        if (verifyNonce(&hashed, &target)) break;
         nonce += 1;
     }
 
@@ -81,6 +81,6 @@ export fn solve_challenge(
 }
 
 // Returns length of the result string
-export fn get_result_length() u32 {
+export fn getResultLength() u32 {
     return result_len;
 }
