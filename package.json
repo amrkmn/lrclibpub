@@ -27,8 +27,8 @@
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-    "deploy": "npm run build && wrangler pages deploy .svelte-kit/cloudflare",
-    "cf:dev": "wrangler pages dev .svelte-kit/cloudflare --compatibility-date=2024-09-23"
+    "deploy": "npm run build && wrangler deploy .svelte-kit/cloudflare",
+    "cf:dev": "wrangler dev .svelte-kit/cloudflare/_worker.js --compatibility-date=2024-09-23"
   },
   "type": "module",
   "dependencies": {
