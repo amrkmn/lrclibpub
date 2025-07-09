@@ -188,15 +188,6 @@
         }
     }
 
-    function formatHashRate(hashRate: number): string {
-        if (hashRate >= 1000000) {
-            return `${(hashRate / 1000000).toFixed(1)}M`;
-        } else if (hashRate >= 1000) {
-            return `${(hashRate / 1000).toFixed(1)}K`;
-        }
-        return hashRate.toString();
-    }
-
     function formatSolveTime(timeMs: number): string {
         if (timeMs < 1000) {
             return `${timeMs}ms`;
