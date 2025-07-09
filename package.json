@@ -2,7 +2,7 @@
   "name": "lrclibpub",
   "version": "0.0.1",
   "devDependencies": {
-    "@sveltejs/adapter-static": "^3.0.8",
+    "@sveltejs/adapter-cloudflare": "^7.0.4",
     "@sveltejs/kit": "^2.0.0",
     "@sveltejs/vite-plugin-svelte": "^4.0.0",
     "autoprefixer": "^10.4.20",
@@ -30,8 +30,5 @@
     "deploy": "npm run build && wrangler deploy .svelte-kit/cloudflare",
     "cf:dev": "wrangler dev .svelte-kit/cloudflare/_worker.js --compatibility-date=2024-09-23"
   },
-  "type": "module",
-  "dependencies": {
-    "@sveltejs/adapter-cloudflare": "^7.0.4"
-  }
+  "type": "module"
 }
