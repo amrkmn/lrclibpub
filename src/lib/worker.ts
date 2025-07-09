@@ -66,7 +66,7 @@ self.onmessage = async (e) => {
         const exports = instance.exports as any;
 
         // Validate required exports
-        const requiredExports = ["solve_challenge", "get_result_length", "memory"];
+        const requiredExports = ["solveChallenge", "getResultLength", "memory"];
         for (const exportName of requiredExports) {
             if (!exports[exportName]) {
                 throw new Error(`Required WASM export '${exportName}' not found. Available: ${Object.keys(exports).join(", ")}`);
@@ -93,18 +93,18 @@ self.onmessage = async (e) => {
         console.log(`Starting challenge: prefix="${prefix}", target="${target}"`);
         console.log(`Memory allocated - prefix: ${prefixOffset}, target: ${targetOffset}`);
 
-        // Call the solve_challenge function
-        const resultOffset = exports.solve_challenge(prefixOffset, prefixBytes.length, targetOffset, targetBytes.length);
+        // Call the solveChallenge function
+        const resultOffset = exports.solveChallenge(prefixOffset, prefixBytes.length, targetOffset, targetBytes.length);
 
         if (resultOffset === 0) {
-            throw new Error("WASM solve_challenge returned 0 (error)");
+            throw new Error("WASM solveChallenge returned 0 (error)");
         }
 
         // Get fresh memory view in case memory was reallocated during solving
         memoryView = getMemoryView(memory);
 
         // Get the result length
-        const resultLength = exports.get_result_length();
+        const resultLength = exports.getResultLength();
 
         if (resultLength === 0 || resultLength > 64) {
             throw new Error(`Invalid result length: ${resultLength}`);
