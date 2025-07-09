@@ -16,7 +16,7 @@ async function initWasm() {
                     const elapsed = now - startTime;
                     const rate = value / (elapsed / 1000);
 
-                    if (now - lastUpdate >= 800) {
+                    if (now - lastUpdate >= 300) {
                         self.postMessage({
                             type: "progress",
                             attempts: value,
