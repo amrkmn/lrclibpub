@@ -32,7 +32,7 @@ try {
 
     // Run zig build
     console.log("⚡ Running zig build...");
-    execSync("zig build -Doptimize=ReleaseFast", { stdio: "inherit" });
+    execSync("zig build", { stdio: "inherit" });
 
     // Copy the built WASM file
     const srcPath = join(wasmDir, "zig-out", "bin", "lrclibpub.wasm");

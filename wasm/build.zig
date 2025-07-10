@@ -6,13 +6,11 @@ pub fn build(b: *std.Build) void {
         .os_tag = .freestanding,
     });
 
-    const optimize = b.standardOptimizeOption(.{});
-
     const wasm_lib = b.addExecutable(.{
         .name = "lrclibpub",
         .root_source_file = b.path("src/main.zig"),
         .target = target,
-        .optimize = optimize,
+        .optimize = .ReleaseFast,
     });
 
     // Set entry to disabled for WebAssembly library
