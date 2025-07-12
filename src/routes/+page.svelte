@@ -20,6 +20,7 @@
     let success = false;
     let solveProgress = { attempts: 0, nonce: 0, startTime: 0, rate: 0 };
     let solveTime = 0;
+    let solveAttempts = 0;
 
     // Timeouts for notifications
     let errorTimeout: number;
@@ -142,7 +143,7 @@
                 if (!worker) return;
 
                 worker.onmessage = (e) => {
-                    const { type, attempts, rate, nonce, error } = e.data;
+                    const { type, attempts, rate, nonce, error, finalAttempts, totalTime } = e.data;
 
                     if (type === "progress") {
                         solveProgress = {
@@ -153,8 +154,8 @@
                         };
                     } else if (type === "success") {
                         // Calculate solve time
-                        solveTime = Date.now() - solveProgress.startTime;
-                        solveProgress.nonce = nonce;
+                        solveTime = totalTime;
+                        solveAttempts = finalAttempts;
                         resolve(nonce);
                     } else if (type === "error") {
                         reject(new Error(error));
@@ -310,7 +311,7 @@
                                 <div class="font-medium">Lyrics published successfully!</div>
                                 {#if solveTime > 0}
                                     <div class="text-sm text-green-600">
-                                        Proof-of-work solved in {formatSolveTime(solveTime)} with {solveProgress.nonce} attempts.
+                                        Proof-of-work solved in {formatSolveTime(solveTime)} with {solveAttempts} attempts.
                                     </div>
                                 {/if}
                             </div>
