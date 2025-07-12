@@ -4,6 +4,7 @@
     import { numify } from "numify";
     import { onMount } from "svelte";
 
+    // Initialize form data with default values
     let formData: FormData = {
         trackName: "",
         artistName: "",
@@ -13,15 +14,20 @@
         syncedLyrics: "",
     };
 
+    // UI state variables
     let isSubmitting = false;
     let error: string | null = null;
     let success = false;
     let solveProgress = { attempts: 0, nonce: 0, startTime: 0, rate: 0 };
-    let solveTime: number = 0; // Track solving time in milliseconds
+    let solveTime = 0;
 
+    // Timeouts for notifications
     let errorTimeout: number;
     let successTimeout: number;
 
+    /**
+     * Set an error message with auto-dismiss after 5 seconds
+     */
     function setError(message: string) {
         error = message;
         if (errorTimeout) clearTimeout(errorTimeout);
@@ -30,6 +36,9 @@
         }, 5000) as unknown as number;
     }
 
+    /**
+     * Set success state with auto-dismiss after 5 seconds
+     */
     function setSuccess() {
         success = true;
         if (successTimeout) clearTimeout(successTimeout);
@@ -39,19 +48,24 @@
         }, 5000) as unknown as number;
     }
 
-    onMount(() => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const titleParam = urlParams.get("title");
-        const artistParam = urlParams.get("artist");
-        const albumParam = urlParams.get("album");
-        const durationParam = urlParams.get("duration");
+    /**
+     * Format solve time in human-readable format
+     */
+    function formatSolveTime(timeMs: number): string {
+        if (timeMs < 1000) {
+            return `${timeMs}ms`;
+        } else if (timeMs < 60000) {
+            return `${(timeMs / 1000).toFixed(1)}s`;
+        } else {
+            const minutes = Math.floor(timeMs / 60000);
+            const seconds = Math.floor((timeMs % 60000) / 1000);
+            return `${minutes}m ${seconds}s`;
+        }
+    }
 
-        if (titleParam) formData.trackName = decodeURIComponent(titleParam);
-        if (artistParam) formData.artistName = decodeURIComponent(artistParam);
-        if (albumParam) formData.albumName = decodeURIComponent(albumParam);
-        if (durationParam) formData.duration = decodeURIComponent(durationParam);
-    });
-
+    /**
+     * Request a new challenge from the server
+     */
     async function requestChallenge(): Promise<Challenge> {
         try {
             const response = await fetch("/api/challenge", {
@@ -63,10 +77,34 @@
         }
     }
 
+    /**
+     * Reset the form to its initial state
+     */
+    function resetForm() {
+        formData = {
+            trackName: "",
+            artistName: "",
+            albumName: "",
+            duration: "",
+            plainLyrics: "",
+            syncedLyrics: "",
+        };
+
+        // Reset file input
+        const fileInput = document.getElementById("lrcFile") as HTMLInputElement;
+        if (fileInput) {
+            fileInput.value = "";
+        }
+    }
+
+    /**
+     * Handle form submission
+     */
     async function handleSubmit() {
         let worker: Worker | null = null;
 
         try {
+            // Reset state
             isSubmitting = true;
             error = null;
             success = false;
@@ -99,6 +137,7 @@
                 type: "module",
             });
 
+            // Process the challenge with WebWorker
             const nonce = await new Promise<string>((resolve, reject) => {
                 if (!worker) return;
 
@@ -147,6 +186,7 @@
                 }),
             });
 
+            // Handle API response
             let data;
             try {
                 const responseText = await response.text();
@@ -160,22 +200,7 @@
             }
 
             setSuccess();
-
-            // Reset form after successful submission
-            formData = {
-                trackName: "",
-                artistName: "",
-                albumName: "",
-                duration: "",
-                plainLyrics: "",
-                syncedLyrics: "",
-            };
-
-            // Reset file input
-            const fileInput = document.getElementById("lrcFile") as HTMLInputElement;
-            if (fileInput) {
-                fileInput.value = "";
-            }
+            resetForm();
         } catch (err) {
             setError(err instanceof Error ? err.message : "An unknown error occurred");
         } finally {
@@ -188,22 +213,25 @@
         }
     }
 
-    function formatSolveTime(timeMs: number): string {
-        if (timeMs < 1000) {
-            return `${timeMs}ms`;
-        } else if (timeMs < 60000) {
-            return `${(timeMs / 1000).toFixed(1)}s`;
-        } else {
-            const minutes = Math.floor(timeMs / 60000);
-            const seconds = Math.floor((timeMs % 60000) / 1000);
-            return `${minutes}m ${seconds}s`;
-        }
-    }
+    // Initialize form data from URL parameters if available
+    onMount(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const titleParam = urlParams.get("title");
+        const artistParam = urlParams.get("artist");
+        const albumParam = urlParams.get("album");
+        const durationParam = urlParams.get("duration");
+
+        if (titleParam) formData.trackName = decodeURIComponent(titleParam);
+        if (artistParam) formData.artistName = decodeURIComponent(artistParam);
+        if (albumParam) formData.albumName = decodeURIComponent(albumParam);
+        if (durationParam) formData.duration = decodeURIComponent(durationParam);
+    });
 </script>
 
 <div class="min-h-screen bg-[#E0E7FF] text-indigo-900 p-6">
     <div class="max-w-2xl mx-auto">
-        <div class="flex md:items-center items-start justify-between mb-8 md:flex-row flex-col gap-6">
+        <!-- Header -->
+        <header class="flex md:items-center items-start justify-between mb-8 md:flex-row flex-col gap-6">
             <h1 class="text-3xl font-bold flex items-center gap-2">
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -215,21 +243,28 @@
                 >
                     <path stroke-linecap="round" stroke-linejoin="round" d="m9 9 6-6m0 0 6 6m-6-6v12a6 6 0 0 1-12 0v-3" />
                 </svg>
-
                 LRCLIBpub
             </h1>
+        </header>
+
+        <!-- Introduction -->
+        <div class="text-indigo-800 mb-6">
+            <p>
+                Welcome to LRCLIBpub - a simple web interface to publish lyrics to the
+                <a href="https://lrclib.net" target="_blank" rel="noopener noreferrer" class="underline">LRCLIB</a>
+                lyrics database.
+            </p>
+            <p class="mt-3">
+                Please be mindful of the quality and accuracy of the lyrics you submit. This is a crowd-sourced effort, and your
+                contributions enhance the database for everyone.
+            </p>
         </div>
 
-        <p class="text-indigo-800 mb-6">
-            Welcome to LRCLIBpub - a simple web interface to publish lyrics to the
-            <a href="https://lrclib.net" target="_blank" rel="noopener noreferrer" class="underline">LRCLIB</a>
-            lyrics database. <br /><br /> Please be mindful of the quality and accuracy of the lyrics you submit. This is a crowd-sourced
-            effort, and your contributions enhance the database for everyone.
-        </p>
-
         <form on:submit|preventDefault={handleSubmit} class="space-y-6 rounded-lg shadow-sm">
+            <!-- Notifications container -->
             {#if error || success || isSubmitting}
                 <div class="fixed bottom-4 right-4 flex flex-col gap-2 z-10">
+                    <!-- Error notification -->
                     {#if error}
                         <div
                             class="bg-white p-4 rounded-lg shadow-lg border border-red-200 flex items-center gap-2 text-red-700 animate-fade-in pr-5"
@@ -248,11 +283,11 @@
                                     d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
                                 />
                             </svg>
-
                             {error}
                         </div>
                     {/if}
 
+                    <!-- Success notification -->
                     {#if success}
                         <div
                             class="bg-white p-4 rounded-lg shadow-lg border border-green-200 flex items-center gap-2 text-green-700 animate-fade-in pr-5"
@@ -271,7 +306,6 @@
                                     d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
                                 />
                             </svg>
-
                             <div>
                                 <div class="font-medium">Lyrics published successfully!</div>
                                 {#if solveTime > 0}
@@ -283,8 +317,9 @@
                         </div>
                     {/if}
 
+                    <!-- Progress notification -->
                     {#if isSubmitting}
-                        <div class="fixed bottom-4 right-4 bg-white p-4 rounded-lg shadow-lg border border-indigo-200 pr-5">
+                        <div class="bg-white p-4 rounded-lg shadow-lg border border-indigo-200 pr-5">
                             <div class="flex items-center gap-3">
                                 <div class="animate-spin rounded-full h-4 w-4 border-2 border-indigo-600 border-t-transparent"></div>
                                 <div class="flex flex-col">
@@ -307,53 +342,64 @@
                 </div>
             {/if}
 
+            <!-- Song metadata section -->
             <div class="space-y-4">
+                <!-- Track Name -->
                 <div>
-                    <label for="trackName" class="block text-sm font-medium mb-1"> Track Name * </label>
+                    <label for="trackName" class="block text-sm font-medium mb-1">Track Name *</label>
                     <input
                         type="text"
                         id="trackName"
                         bind:value={formData.trackName}
                         required
+                        placeholder="Enter track name"
                         class="w-full px-3 py-2 border border-indigo-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                 </div>
 
+                <!-- Artist Name -->
                 <div>
-                    <label for="artistName" class="block text-sm font-medium mb-1"> Artist Name * </label>
+                    <label for="artistName" class="block text-sm font-medium mb-1">Artist Name *</label>
                     <input
                         type="text"
                         id="artistName"
                         bind:value={formData.artistName}
                         required
+                        placeholder="Enter artist name"
                         class="w-full px-3 py-2 border border-indigo-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                 </div>
 
+                <!-- Album Name -->
                 <div>
-                    <label for="albumName" class="block text-sm font-medium mb-1"> Album Name </label>
+                    <label for="albumName" class="block text-sm font-medium mb-1">Album Name</label>
                     <input
                         type="text"
                         id="albumName"
                         bind:value={formData.albumName}
+                        placeholder="Enter album name (optional)"
                         class="w-full px-3 py-2 border border-indigo-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                 </div>
 
+                <!-- Duration -->
                 <div>
-                    <label for="duration" class="block text-sm font-medium mb-1"> Duration (seconds) </label>
+                    <label for="duration" class="block text-sm font-medium mb-1">Duration (seconds)</label>
                     <input
                         type="number"
                         id="duration"
                         bind:value={formData.duration}
                         min="0"
+                        placeholder="Song duration in seconds (optional)"
                         class="w-full px-3 py-2 border border-indigo-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                 </div>
 
+                <!-- Lyrics input section -->
                 <div class="space-y-4 p-4 border border-dashed border-indigo-300 rounded-lg bg-indigo-50/50">
-                    <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-4 flex-wrap">
                         <h3 class="text-lg font-semibold">Lyrics Input</h3>
+                        <!-- LRC file upload -->
                         <label
                             for="lrcFile"
                             class="flex items-center gap-2 px-3 py-1.5 text-sm bg-indigo-200/75 hover:bg-indigo-200 text-indigo-700 rounded-md cursor-pointer transition-colors"
@@ -398,19 +444,22 @@
                         />
                     </div>
 
+                    <!-- Plain lyrics input -->
                     <div>
-                        <label for="plainLyrics" class="block text-sm font-medium mb-1"> Plain Lyrics </label>
+                        <label for="plainLyrics" class="block text-sm font-medium mb-1">Plain Lyrics</label>
                         <textarea
                             id="plainLyrics"
                             bind:value={formData.plainLyrics}
                             rows="6"
+                            placeholder="Enter plain lyrics text here"
                             class="w-full px-3 py-2 border border-indigo-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         ></textarea>
                         <p class="mt-1 text-sm text-indigo-600">Leave both lyrics fields empty for instrumental tracks</p>
                     </div>
 
+                    <!-- Synced lyrics input -->
                     <div>
-                        <label for="syncedLyrics" class="block text-sm font-medium mb-1"> Synced Lyrics </label>
+                        <label for="syncedLyrics" class="block text-sm font-medium mb-1">Synced Lyrics</label>
                         <div class="relative">
                             <textarea
                                 id="syncedLyrics"
@@ -424,34 +473,56 @@
                 </div>
             </div>
 
-            <p class="text-sm text-yellow-800 mt-2">
-                <strong>Note:</strong> Publishing involves solving a proof-of-work challenge. This process may take several minutes and
-                could slow down your browser or device.
-            </p>
+            <!-- Warning message -->
+            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4 rounded-md">
+                <p class="text-sm text-yellow-800">
+                    <strong>Note:</strong> Publishing involves solving a proof-of-work challenge. This process may take several minutes
+                    and could slow down your browser or device.
+                </p>
+            </div>
 
+            <!-- Submit button -->
             <button
                 type="submit"
                 disabled={isSubmitting || !formData.trackName.trim() || !formData.artistName.trim()}
-                class="w-full bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                class="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
                 {isSubmitting ? "Publishing, this might take a while..." : "Publish Lyrics"}
             </button>
         </form>
 
+        <!-- Footer -->
         <footer class="mt-8 pt-8 border-t border-indigo-200">
             <div class="space-y-4 text-center">
                 <p class="text-sm text-indigo-800/70">
-                    Powered by <a href="https://better-lyrics.boidu.dev" target="_blank" class="text-indigo-600 hover:underline">
+                    Powered by <a
+                        href="https://better-lyrics.boidu.dev"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="text-indigo-600 hover:underline"
+                    >
                         BetterLyrics
                     </a>
                 </p>
                 <p class="text-sm text-indigo-800/70">
                     This project is a fork of
-                    <a href="https://github.com/boidushya/lrclibup" target="_blank" class="text-indigo-600 hover:underline">
+                    <a
+                        href="https://github.com/boidushya/lrclibup"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="text-indigo-600 hover:underline"
+                    >
                         lrclibup
                     </a>
                     and is open source on
-                    <a href="https://github.com/amrkmn/lrclibpub" target="_blank" class="text-indigo-600 hover:underline"> GitHub </a>
+                    <a
+                        href="https://github.com/amrkmn/lrclibpub"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="text-indigo-600 hover:underline"
+                    >
+                        GitHub
+                    </a>
                 </p>
             </div>
         </footer>
