@@ -39,14 +39,35 @@ function getMemoryView(memory: WebAssembly.Memory): Uint8Array {
     return new Uint8Array(memory.buffer);
 }
 
+// Track memory allocations for better management
+let nextMemoryOffset = 0;
+let memoryReserveSize = 1024; // Reserve 1KB for WASM internal use
+
 // Helper function to allocate memory in WASM
 function allocateInWasm(exports: any, size: number): number {
-    // Simple allocation strategy - use high memory addresses
-    // This assumes your WASM module doesn't use the upper memory regions
     const memory = exports.memory as WebAssembly.Memory;
-    const totalPages = memory.buffer.byteLength / 65536;
-    const highOffset = Math.floor(totalPages * 65536 * 0.8); // Use upper 20% of memory
-    return highOffset;
+    const totalMemory = memory.buffer.byteLength;
+
+    // Initialize offset if this is the first allocation
+    if (nextMemoryOffset === 0)
+        // Start allocations at 80% of memory to avoid conflicts with WASM stack/heap
+        nextMemoryOffset = Math.floor(totalMemory * 0.8);
+
+    // Ensure size is at least 1 byte
+    const bytesToAllocate = Math.max(1, size);
+
+    // Check if we have enough space left
+    if (nextMemoryOffset + bytesToAllocate + memoryReserveSize > totalMemory)
+        // Could grow memory here if needed using memory.grow()
+        console.warn("Warning: Running low on WASM memory");
+
+    // Save the current offset for returning to caller
+    const allocatedOffset = nextMemoryOffset;
+
+    // Move the offset forward for the next allocation (with 8-byte alignment)
+    nextMemoryOffset += Math.ceil(bytesToAllocate / 8) * 8;
+
+    return allocatedOffset;
 }
 
 self.onmessage = async (e) => {
