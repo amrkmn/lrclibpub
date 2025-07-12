@@ -8,7 +8,7 @@ var result_buffer: [64]u8 = undefined;
 var result_len: u32 = 0;
 
 // Compare hash result with target (left-to-right, like Rust)
-fn verifyNonce(result: []const u8, target: []const u8) bool {
+fn verify_nonce(result: []const u8, target: []const u8) bool {
     if (result.len != target.len) return false;
 
     // Compare from most significant bytes first
@@ -20,7 +20,7 @@ fn verifyNonce(result: []const u8, target: []const u8) bool {
 }
 
 // Convert hex string to bytes
-fn hexToBytes(out: []u8, hex_str: []const u8) !void {
+fn hex_to_bytes(out: []u8, hex_str: []const u8) !void {
     if (hex_str.len % 2 != 0 or out.len != hex_str.len / 2)
         return error.InvalidLength;
 
@@ -32,12 +32,12 @@ fn hexToBytes(out: []u8, hex_str: []const u8) !void {
 }
 
 // Solve the proof-of-work challenge
-export fn solveChallenge(
+export fn solve_challenge(
     prefix_ptr: [*]const u8,
     prefix_len: u32,
     target_hex_ptr: [*]const u8,
     target_hex_len: u32,
-) u32 {
+) u64 {
     var nonce: u64 = 0;
     var hashed: [32]u8 = undefined;
     var target: [32]u8 = undefined;
@@ -47,7 +47,7 @@ export fn solveChallenge(
     const target_hex = target_hex_ptr[0..target_hex_len];
 
     // Decode target hex string
-    hexToBytes(&target, target_hex) catch return 0;
+    hex_to_bytes(&target, target_hex) catch return 0;
 
     const prefix_len_usize = @as(usize, prefix_len);
     @memcpy(input_buffer[0..prefix_len_usize], prefix);
@@ -70,17 +70,15 @@ export fn solveChallenge(
             print(@floatFromInt(nonce));
         }
 
-        if (verifyNonce(&hashed, &target)) break;
+        if (verify_nonce(&hashed, &target)) break;
         nonce += 1;
     }
 
-    // Format final nonce to string
-    const result_str = std.fmt.bufPrint(&result_buffer, "{}", .{nonce}) catch return 0;
-    result_len = @as(u32, @intCast(result_str.len));
-    return @intFromPtr(&result_buffer);
+    // Return the nonce value directly
+    return nonce;
 }
 
-// Returns length of the result string
-export fn getResultLength() u32 {
+// Keep this for backwards compatibility if needed
+export fn get_result_length() u32 {
     return result_len;
 }

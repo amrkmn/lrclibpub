@@ -66,7 +66,7 @@ self.onmessage = async (e) => {
         const exports = instance.exports as any;
 
         // Validate required exports
-        const requiredExports = ["solveChallenge", "getResultLength", "memory"];
+        const requiredExports = ["solve_challenge", "memory"];
         for (const exportName of requiredExports) {
             if (!exports[exportName]) {
                 throw new Error(`Required WASM export '${exportName}' not found. Available: ${Object.keys(exports).join(", ")}`);
@@ -93,26 +93,15 @@ self.onmessage = async (e) => {
         console.log(`Starting challenge: prefix="${prefix}", target="${target}"`);
         console.log(`Memory allocated - prefix: ${prefixOffset}, target: ${targetOffset}`);
 
-        // Call the solveChallenge function
-        const resultOffset = exports.solveChallenge(prefixOffset, prefixBytes.length, targetOffset, targetBytes.length);
+        // Call the solve_challenge function - now returns the nonce value directly
+        const nonceValue = exports.solve_challenge(prefixOffset, prefixBytes.length, targetOffset, targetBytes.length);
 
-        if (resultOffset === 0) {
-            throw new Error("WASM solveChallenge returned 0 (error)");
+        if (nonceValue === 0) {
+            throw new Error("WASM solve_challenge returned 0 (error)");
         }
 
-        // Get fresh memory view in case memory was reallocated during solving
-        memoryView = getMemoryView(memory);
-
-        // Get the result length
-        const resultLength = exports.getResultLength();
-
-        if (resultLength === 0 || resultLength > 64) {
-            throw new Error(`Invalid result length: ${resultLength}`);
-        }
-
-        // Read the result from WASM memory
-        const resultBytes = memoryView.slice(resultOffset, resultOffset + resultLength);
-        const nonce = new TextDecoder().decode(resultBytes);
+        // Convert the numeric nonce to a string
+        const nonce = nonceValue.toString();
 
         const totalTime = Date.now() - startTime;
         console.log(`Challenge solved! Nonce: ${nonce}, Time: ${totalTime}ms`);
@@ -121,7 +110,7 @@ self.onmessage = async (e) => {
             type: "success",
             nonce,
             totalTime,
-            finalAttempts: parseInt(nonce) + 1,
+            finalAttempts: Number(nonceValue) + 1, // Use the numeric value directly
         });
     } catch (err) {
         const error = err instanceof Error ? err.message : "Unknown error";
