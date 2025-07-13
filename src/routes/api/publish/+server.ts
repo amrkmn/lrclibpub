@@ -3,7 +3,7 @@ import type { RequestHandler } from "./$types";
 
 export const POST: RequestHandler = async ({ request }) => {
     const publishToken = request.headers.get("X-Publish-Token");
-    
+
     if (!publishToken) {
         throw error(400, "Missing publish token");
     }

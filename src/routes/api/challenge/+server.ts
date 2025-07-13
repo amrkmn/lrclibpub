@@ -15,9 +15,6 @@ export const POST: RequestHandler = async () => {
         return json(challenge);
     } catch (error) {
         console.error("Challenge request error:", error);
-        return json(
-            { error: "Failed to get challenge from LRCLIB" },
-            { status: 500 }
-        );
+        return json({ error: "Failed to get challenge from LRCLIB" }, { status: 500 });
     }
 };
