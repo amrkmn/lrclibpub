@@ -29,6 +29,7 @@ export const POST: RequestHandler = async ({ request }) => {
     const lrclibBody: any = {
         trackName: trackName.trim(),
         artistName: artistName.trim(),
+        albumName: "",
     };
 
     if (albumName?.trim()) {
