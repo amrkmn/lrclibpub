@@ -5,22 +5,22 @@
     import { onMount } from "svelte";
 
     // Initialize form data with default values
-    let formData: FormData = {
+    let formData = $state<FormData>({
         trackName: "",
         artistName: "",
         albumName: "",
         duration: "",
         plainLyrics: "",
         syncedLyrics: "",
-    };
+    });
 
     // UI state variables
-    let isSubmitting = false;
-    let error: string | null = null;
-    let success = false;
-    let solveProgress = { attempts: 0, nonce: 0, startTime: 0, rate: 0 };
-    let solveTime = 0;
-    let solveAttempts = 0;
+    let isSubmitting = $state(false);
+    let error = $state<string | null>(null);
+    let success = $state(false);
+    let solveProgress = $state({ attempts: 0, nonce: 0, startTime: 0, rate: 0 });
+    let solveTime = $state(0);
+    let solveAttempts = $state(0);
 
     // Timeouts for notifications
     let errorTimeout: number;
@@ -82,14 +82,12 @@
      * Reset the form to its initial state
      */
     function resetForm() {
-        formData = {
-            trackName: "",
-            artistName: "",
-            albumName: "",
-            duration: "",
-            plainLyrics: "",
-            syncedLyrics: "",
-        };
+        formData.trackName = "";
+        formData.artistName = "";
+        formData.albumName = "";
+        formData.duration = "";
+        formData.plainLyrics = "";
+        formData.syncedLyrics = "";
 
         // Reset file input
         const fileInput = document.getElementById("lrcFile") as HTMLInputElement;
@@ -101,7 +99,8 @@
     /**
      * Handle form submission
      */
-    async function handleSubmit() {
+    async function handleSubmit(event: Event) {
+        event.preventDefault();
         let worker: Worker | null = null;
 
         try {
@@ -261,7 +260,7 @@
             </p>
         </div>
 
-        <form on:submit|preventDefault={handleSubmit} class="space-y-6 rounded-lg shadow-xs">
+        <form onsubmit={handleSubmit} class="space-y-6 rounded-lg shadow-xs">
             <!-- Notifications container -->
             {#if error || success || isSubmitting}
                 <div class="fixed bottom-4 right-4 flex flex-col gap-2 z-10">
@@ -425,22 +424,19 @@
                             id="lrcFile"
                             accept=".lrc"
                             class="hidden"
-                            on:change={async (e) => {
+                            onchange={async (e) => {
                                 const file = (e.target as HTMLInputElement)?.files?.[0];
                                 if (!file) return;
 
                                 const content = await file.text();
                                 const parsed = parseLRCFile(content);
 
-                                formData = {
-                                    ...formData,
-                                    trackName: parsed.title || formData.trackName,
-                                    artistName: parsed.artist || formData.artistName,
-                                    albumName: parsed.album || formData.albumName,
-                                    duration: parsed.duration || formData.duration,
-                                    plainLyrics: parsed.plainLyrics,
-                                    syncedLyrics: parsed.syncedLyrics,
-                                };
+                                if (parsed.title) formData.trackName = parsed.title;
+                                if (parsed.artist) formData.artistName = parsed.artist;
+                                if (parsed.album) formData.albumName = parsed.album;
+                                if (parsed.duration) formData.duration = parsed.duration;
+                                formData.plainLyrics = parsed.plainLyrics;
+                                formData.syncedLyrics = parsed.syncedLyrics;
                             }}
                         />
                     </div>
