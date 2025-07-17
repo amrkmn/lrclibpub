@@ -261,7 +261,7 @@
             </p>
         </div>
 
-        <form on:submit|preventDefault={handleSubmit} class="space-y-6 rounded-lg shadow-sm">
+        <form on:submit|preventDefault={handleSubmit} class="space-y-6 rounded-lg shadow-xs">
             <!-- Notifications container -->
             {#if error || success || isSubmitting}
                 <div class="fixed bottom-4 right-4 flex flex-col gap-2 z-10">
@@ -354,7 +354,7 @@
                         bind:value={formData.trackName}
                         required
                         placeholder="Enter track name"
-                        class="w-full px-3 py-2 border border-indigo-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        class="w-full px-3 py-2 border border-indigo-200 rounded-md focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
                     />
                 </div>
 
@@ -367,7 +367,7 @@
                         bind:value={formData.artistName}
                         required
                         placeholder="Enter artist name"
-                        class="w-full px-3 py-2 border border-indigo-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        class="w-full px-3 py-2 border border-indigo-200 rounded-md focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
                     />
                 </div>
 
@@ -379,7 +379,7 @@
                         id="albumName"
                         bind:value={formData.albumName}
                         placeholder="Enter album name (optional)"
-                        class="w-full px-3 py-2 border border-indigo-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        class="w-full px-3 py-2 border border-indigo-200 rounded-md focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
                     />
                 </div>
 
@@ -392,7 +392,7 @@
                         bind:value={formData.duration}
                         min="0"
                         placeholder="Song duration in seconds (optional)"
-                        class="w-full px-3 py-2 border border-indigo-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        class="w-full px-3 py-2 border border-indigo-200 rounded-md focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
                     />
                 </div>
 
@@ -453,7 +453,7 @@
                             bind:value={formData.plainLyrics}
                             rows="6"
                             placeholder="Enter plain lyrics text here"
-                            class="w-full px-3 py-2 border border-indigo-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            class="w-full px-3 py-2 border border-indigo-200 rounded-md focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
                         ></textarea>
                         <p class="mt-1 text-sm text-indigo-600">Leave both lyrics fields empty for instrumental tracks</p>
                     </div>
@@ -466,7 +466,7 @@
                                 id="syncedLyrics"
                                 bind:value={formData.syncedLyrics}
                                 rows="6"
-                                class="w-full px-3 py-2 border border-indigo-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                class="w-full px-3 py-2 border border-indigo-200 rounded-md focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
                                 placeholder="[mm:ss.xx] Lyrics line"
                             ></textarea>
                         </div>
@@ -486,7 +486,7 @@
             <button
                 type="submit"
                 disabled={isSubmitting || !formData.trackName.trim() || !formData.artistName.trim()}
-                class="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                class="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg hover:bg-indigo-700 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
                 {isSubmitting ? "Publishing, this might take a while..." : "Publish Lyrics"}
             </button>
