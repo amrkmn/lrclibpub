@@ -11,7 +11,7 @@ pub fn build(b: *std.Build) void {
         .name = "lrclibpub",
         .root_source_file = b.path("src/main.zig"),
         .target = target,
-        .optimize = .ReleaseSmall,
+        .optimize = .ReleaseFast,
     });
 
     if (builtin.zig_version.major == 0 and builtin.zig_version.minor < 14) {
