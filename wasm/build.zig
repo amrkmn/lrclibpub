@@ -10,7 +10,7 @@ pub fn build(b: *std.Build) void {
         .name = "lrclibpub",
         .root_source_file = b.path("src/main.zig"),
         .target = target,
-        .optimize = .ReleaseFast,
+        .optimize = .ReleaseSmall,
     });
 
     // Set entry to disabled for WebAssembly library

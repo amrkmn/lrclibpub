@@ -87,7 +87,7 @@ self.onmessage = async (e) => {
         const exports = instance.exports as any;
 
         // Validate required exports
-        const requiredExports = ["solve_challenge", "memory"];
+        const requiredExports = ["solveChallenge", "memory"];
         for (const exportName of requiredExports) {
             if (!exports[exportName]) {
                 throw new Error(`Required WASM export '${exportName}' not found. Available: ${Object.keys(exports).join(", ")}`);
@@ -114,11 +114,11 @@ self.onmessage = async (e) => {
         console.log(`Starting challenge: prefix="${prefix}", target="${target}"`);
         console.log(`Memory allocated - prefix: ${prefixOffset}, target: ${targetOffset}`);
 
-        // Call the solve_challenge function - now returns the nonce value directly
-        const nonceValue = exports.solve_challenge(prefixOffset, prefixBytes.length, targetOffset, targetBytes.length);
+        // Call the solveChallenge function - now returns the nonce value directly
+        const nonceValue = exports.solveChallenge(prefixOffset, prefixBytes.length, targetOffset, targetBytes.length);
 
         if (nonceValue === 0) {
-            throw new Error("WASM solve_challenge returned 0 (error)");
+            throw new Error("WASM solveChallenge returned 0 (error)");
         }
 
         // Convert the numeric nonce to a string
