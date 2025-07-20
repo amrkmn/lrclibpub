@@ -8,6 +8,7 @@ import tailwindcss from "@tailwindcss/vite";
 export default defineConfig({
     plugins: [sveltekit(), wasm(), topLevelAwait(), devtoolsJson(), tailwindcss()],
     worker: {
+        format: "es",
         plugins: () => [wasm()],
     },
     optimizeDeps: {
