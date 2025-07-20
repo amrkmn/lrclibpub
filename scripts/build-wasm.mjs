@@ -1,6 +1,6 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
-import { execSync } from "child_process";
+import { $ } from "bun";
 import { copyFileSync, mkdirSync, existsSync } from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
@@ -16,7 +16,8 @@ try {
 
     // Verify Zig is installed
     try {
-        execSync("zig version", { stdio: "pipe" });
+        const version = await $`zig version`.text();
+        console.log(`ℹ️  Zig version: ${version.trim()}`);
     } catch (error) {
         throw new Error("Zig is not installed or not in PATH. Please install Zig from https://ziglang.org/");
     }
@@ -32,7 +33,7 @@ try {
 
     // Run zig build
     console.log("⚡ Running zig build...");
-    execSync("zig build", { stdio: "inherit" });
+    await $`zig build`;
 
     // Copy the built WASM file
     const srcPath = join(wasmDir, "zig-out", "bin", "lrclibpub.wasm");
