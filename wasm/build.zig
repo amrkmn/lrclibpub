@@ -1,4 +1,5 @@
 const std = @import("std");
+const builtin = @import("builtin");
 
 pub fn build(b: *std.Build) void {
     const target = b.resolveTargetQuery(.{
@@ -12,6 +13,10 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = .ReleaseSmall,
     });
+
+    if (builtin.zig_version.major == 0 and builtin.zig_version.minor < 14) {
+        @compileError("Building requires Zig 0.14.0 or later");
+    }
 
     // Set entry to disabled for WebAssembly library
     wasm_lib.entry = .disabled;
