@@ -1,11 +1,11 @@
 let wasmModule: WebAssembly.WebAssemblyInstantiatedSource | null = null;
-let hashCount = 0;
 let lastUpdate = Date.now();
 let startTime = Date.now();
 
 async function initWasm() {
+    console.log(new URL("./wasm/lrclibpub.wasm", import.meta.url));
     if (!wasmModule) {
-        const wasmResponse = await fetch("/wasm/lrclibpub.wasm");
+        const wasmResponse = await fetch(new URL("./wasm/lrclibpub.wasm", import.meta.url));
         const wasmBytes = await wasmResponse.arrayBuffer();
 
         const importObject = {
@@ -72,7 +72,6 @@ function allocateInWasm(exports: any, size: number): number {
 
 self.onmessage = async (e) => {
     const { prefix, target } = e.data;
-    hashCount = 0;
     startTime = Date.now();
     lastUpdate = startTime;
 

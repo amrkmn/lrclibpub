@@ -36,7 +36,7 @@ try {
 
     // Copy the built WASM file
     const srcPath = join(wasmDir, "zig-out", "bin", "lrclibpub.wasm");
-    const destDir = join(projectRoot, "static", "wasm");
+    const destDir = join(projectRoot, "src", "lib", "wasm");
     const destPath = join(destDir, "lrclibpub.wasm");
 
     if (!existsSync(srcPath)) {
