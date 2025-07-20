@@ -3,7 +3,6 @@ let lastUpdate = Date.now();
 let startTime = Date.now();
 
 async function initWasm() {
-    console.log(new URL("./wasm/lrclibpub.wasm", import.meta.url));
     if (!wasmModule) {
         const wasmResponse = await fetch(new URL("./wasm/lrclibpub.wasm", import.meta.url));
         const wasmBytes = await wasmResponse.arrayBuffer();
