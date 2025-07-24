@@ -21,7 +21,7 @@
     "private": true,
     "scripts": {
         "dev": "vite dev",
-        "build": "vite build",
+        "build": "rm -r .svelte-kit/cloudflare && vite build",
         "build:wasm": "bun scripts/build-wasm.mjs",
         "preview": "vite preview",
         "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
