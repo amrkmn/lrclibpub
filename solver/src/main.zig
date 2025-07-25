@@ -54,7 +54,7 @@ export fn solveChallenge(
     @memcpy(input_buffer[0..prefix_len_usize], prefix);
 
     // Precompute reusable context
-    while (true) : (nonce += 1) {
+    while (true) {
         const start = prefix_len_usize;
 
         // Write nonce as decimal into buffer
@@ -72,6 +72,8 @@ export fn solveChallenge(
         }
 
         if (verifyNonce(&hashed, &target)) break;
+
+        nonce += 1;
     }
 
     // Return the nonce value directly
