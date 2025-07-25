@@ -22,21 +22,21 @@ try {
         throw new Error("Zig is not installed or not in PATH. Please install Zig from https://ziglang.org/");
     }
 
-    // Change to wasm directory and build
-    const wasmDir = join(projectRoot, "wasm");
-    if (!existsSync(wasmDir)) {
-        throw new Error(`WASM source directory not found: ${wasmDir}`);
+    // Change to solver directory and build
+    const solverDir = join(projectRoot, "solver");
+    if (!existsSync(solverDir)) {
+        throw new Error(`Solver source directory not found: ${solverDir}`);
     }
 
-    console.log(`📁 Working directory: ${wasmDir}`);
-    process.chdir(wasmDir);
+    console.log(`📁 Working directory: ${solverDir}`);
+    process.chdir(solverDir);
 
     // Run zig build
     console.log("⚡ Running zig build...");
     await $`zig build`;
 
     // Copy the built WASM file
-    const srcPath = join(wasmDir, "zig-out", "bin", "lrclibpub.wasm");
+    const srcPath = join(solverDir, "zig-out", "bin", "lrclibpub.wasm");
     const destDir = join(projectRoot, "src", "lib", "wasm");
     const destPath = join(destDir, "lrclibpub.wasm");
 

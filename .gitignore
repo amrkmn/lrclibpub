@@ -23,5 +23,5 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
 # Zig
-wasm/.zig-cache
-wasm/zig-out
+solver/.zig-cache
+solver/zig-out
