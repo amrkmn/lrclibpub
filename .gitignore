@@ -25,3 +25,7 @@ vite.config.ts.timestamp-*
 # Zig
 wasm/.zig-cache
 wasm/zig-out
+
+# Rust
+solver/target
+solver/pkg

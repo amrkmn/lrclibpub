@@ -1,0 +1,15 @@
+{
+  "name": "lrclibpub",
+  "type": "module",
+  "version": "0.1.0",
+  "files": [
+    "lrclibpub_bg.wasm",
+    "lrclibpub.js",
+    "lrclibpub.d.ts"
+  ],
+  "main": "lrclibpub.js",
+  "types": "lrclibpub.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}
