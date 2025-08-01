@@ -1,4 +1,5 @@
 <script lang="ts">
+    import Footer from "$lib/components/Footer.svelte";
     import { parseLRCFile } from "$lib/lrc";
     import type { Challenge, FormData } from "$lib/types";
     import { numify } from "numify";
@@ -245,6 +246,26 @@
                 </svg>
                 LRCLIBpub
             </h1>
+            <a
+                href="/search"
+                class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+            >
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="1.5"
+                    stroke="currentColor"
+                    class="size-4"
+                >
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
+                    />
+                </svg>
+                Search Lyrics
+            </a>
         </header>
 
         <!-- Introduction -->
@@ -488,40 +509,6 @@
             </button>
         </form>
 
-        <!-- Footer -->
-        <footer class="mt-8 pt-8 border-t border-indigo-200">
-            <div class="space-y-4 text-center">
-                <p class="text-sm text-indigo-800/70">
-                    Powered by <a
-                        href="https://better-lyrics.boidu.dev"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="text-indigo-600 hover:underline"
-                    >
-                        BetterLyrics
-                    </a>
-                </p>
-                <p class="text-sm text-indigo-800/70">
-                    This project is a fork of
-                    <a
-                        href="https://github.com/boidushya/lrclibup"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="text-indigo-600 hover:underline"
-                    >
-                        lrclibup
-                    </a>
-                    and is open source on
-                    <a
-                        href="https://github.com/amrkmn/lrclibpub"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="text-indigo-600 hover:underline"
-                    >
-                        GitHub
-                    </a>
-                </p>
-            </div>
-        </footer>
+        <Footer />
     </div>
 </div>
