@@ -171,13 +171,12 @@
     }
 
     /**
-     * Format duration from milliseconds to MM:SS
+     * Format duration from seconds to MM:SS
      */
     function formatDuration(duration?: number): string {
         if (!duration) return "Unknown";
-        const seconds = Math.floor(duration / 1000);
-        const minutes = Math.floor(seconds / 60);
-        const remainingSeconds = seconds % 60;
+        const minutes = Math.floor(duration / 60);
+        const remainingSeconds = duration % 60;
         return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
     }
 
@@ -506,7 +505,7 @@
                     </div>
                 {:else}
                     <div class="divide-y divide-indigo-100">
-                        {#each results as result, index}
+                        {#each results as result}
                             <div class="p-6 hover:bg-indigo-50/50 transition-colors">
                                 <!-- Track Info -->
                                 <div class="flex justify-between items-start mb-3">
