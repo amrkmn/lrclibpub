@@ -24,6 +24,7 @@
     let viewingLyrics = $state<LyricResult | null>(null);
     let wasAutoSwitched = $state(false);
     let copiedStates = $state<{ [key: string]: boolean }>({});
+    let activeTab = $state<"synced" | "plain">("synced");
 
     // Timeouts for notifications
     let errorTimeout: number;
@@ -57,6 +58,12 @@
      */
     function viewLyrics(result: LyricResult) {
         viewingLyrics = result;
+        // Set default tab based on available lyrics
+        if (result.syncedLyrics) {
+            activeTab = "synced";
+        } else if (result.plainLyrics) {
+            activeTab = "plain";
+        }
     }
 
     /**
@@ -735,18 +742,20 @@
 
 <!-- Lyrics Viewer Modal -->
 {#if viewingLyrics}
-    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+    <div class="fixed inset-0 bg-black/50 bg-opacity-75 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div
+            class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[85vh] overflow-hidden flex flex-col border border-indigo-200"
+        >
             <!-- Modal Header -->
-            <div class="flex items-center justify-between p-6 border-b border-gray-200">
+            <div class="flex items-center justify-between p-6 border-b border-indigo-200 bg-indigo-50">
                 <div>
-                    <h2 class="text-xl font-semibold text-gray-900">{viewingLyrics.trackName}</h2>
-                    <p class="text-gray-600">by {viewingLyrics.artistName}</p>
+                    <h2 class="text-xl font-bold text-indigo-900">{viewingLyrics.trackName}</h2>
+                    <p class="text-indigo-700">by {viewingLyrics.artistName}</p>
                 </div>
                 <button
                     onclick={closeLyricsViewer}
                     aria-label="Close lyrics viewer"
-                    class="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    class="p-2 hover:bg-indigo-100 rounded-lg transition-colors text-indigo-700"
                 >
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -761,111 +770,47 @@
                 </button>
             </div>
 
-            <!-- Modal Content -->
-            <div class="p-6 overflow-y-auto flex-1">
-                <div class="space-y-6">
-                    {#if viewingLyrics.syncedLyrics}
-                        <div>
-                            <div class="flex items-center justify-between mb-3">
-                                <h3 class="text-lg font-medium text-gray-900 flex items-center gap-2">
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke-width="1.5"
-                                        stroke="currentColor"
-                                        class="size-5"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                                        />
-                                    </svg>
-                                    Synced Lyrics (LRC Format)
-                                </h3>
-                                <button
-                                    onclick={() =>
-                                        copyToClipboard(viewingLyrics!.syncedLyrics!, "Synced lyrics", `synced-${viewingLyrics!.id}`)}
-                                    class="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-colors"
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke-width="1.5"
-                                        stroke="currentColor"
-                                        class="size-4"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184"
-                                        />
-                                    </svg>
-                                    {copiedStates[`synced-${viewingLyrics!.id}`] ? "Copied" : "Copy"}
-                                </button>
-                            </div>
-                            <pre
-                                class="bg-gray-50 p-4 rounded-lg border text-sm overflow-x-auto whitespace-pre-wrap">{viewingLyrics.syncedLyrics}</pre>
-                        </div>
-                    {/if}
-
-                    {#if viewingLyrics.plainLyrics}
-                        <div>
-                            <div class="flex items-center justify-between mb-3">
-                                <h3 class="text-lg font-medium text-gray-900 flex items-center gap-2">
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke-width="1.5"
-                                        stroke="currentColor"
-                                        class="size-5"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0-1.125.504-1.125 1.125V11.25a9 9 0 0 0-9-9Z"
-                                        />
-                                    </svg>
-                                    Plain Lyrics
-                                </h3>
-                                <button
-                                    onclick={() =>
-                                        copyToClipboard(viewingLyrics!.plainLyrics!, "Plain lyrics", `plain-${viewingLyrics!.id}`)}
-                                    class="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-colors"
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke-width="1.5"
-                                        stroke="currentColor"
-                                        class="size-4"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184"
-                                        />
-                                    </svg>
-                                    {copiedStates[`plain-${viewingLyrics!.id}`] ? "Copied" : "Copy"}
-                                </button>
-                            </div>
-                            <div class="bg-gray-50 p-4 rounded-lg border text-sm whitespace-pre-wrap">{viewingLyrics.plainLyrics}</div>
-                        </div>
-                    {/if}
-
-                    {#if !viewingLyrics.syncedLyrics && !viewingLyrics.plainLyrics}
-                        <div class="text-center py-8 text-gray-500">
+            <!-- Tabs -->
+            {#if viewingLyrics.syncedLyrics && viewingLyrics.plainLyrics}
+                <div class="flex border-b border-indigo-200 bg-white">
+                    <button
+                        onclick={() => (activeTab = "synced")}
+                        class="flex-1 px-6 py-3 text-sm font-medium transition-colors border-b-2 {activeTab === 'synced'
+                            ? 'text-indigo-600 border-indigo-600 bg-indigo-50'
+                            : 'text-indigo-700 border-transparent hover:text-indigo-600 hover:bg-indigo-50'}"
+                    >
+                        <div class="flex items-center justify-center gap-2">
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 stroke-width="1.5"
                                 stroke="currentColor"
-                                class="size-12 mx-auto mb-4"
+                                class="size-4"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                                />
+                            </svg>
+                            Synced Lyrics (LRC)
+                        </div>
+                    </button>
+                    <button
+                        onclick={() => (activeTab = "plain")}
+                        class="flex-1 px-6 py-3 text-sm font-medium transition-colors border-b-2 {activeTab === 'plain'
+                            ? 'text-indigo-600 border-indigo-600 bg-indigo-50'
+                            : 'text-indigo-700 border-transparent hover:text-indigo-600 hover:bg-indigo-50'}"
+                    >
+                        <div class="flex items-center justify-center gap-2">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke-width="1.5"
+                                stroke="currentColor"
+                                class="size-4"
                             >
                                 <path
                                     stroke-linecap="round"
@@ -873,17 +818,226 @@
                                     d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0-1.125.504-1.125 1.125V11.25a9 9 0 0 0-9-9Z"
                                 />
                             </svg>
-                            <p>No lyrics available for this track</p>
+                            Plain Lyrics
                         </div>
-                    {/if}
+                    </button>
                 </div>
+            {/if}
+
+            <!-- Modal Content -->
+            <div class="p-6 overflow-y-auto flex-1">
+                {#if activeTab === "synced" && viewingLyrics.syncedLyrics}
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-indigo-900 flex items-center gap-2">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="1.5"
+                                    stroke="currentColor"
+                                    class="size-5"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                                    />
+                                </svg>
+                                Synced Lyrics (LRC Format)
+                            </h3>
+                            <button
+                                onclick={() =>
+                                    copyToClipboard(viewingLyrics!.syncedLyrics!, "Synced lyrics", `synced-${viewingLyrics!.id}`)}
+                                class="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-colors"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="1.5"
+                                    stroke="currentColor"
+                                    class="size-4"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184"
+                                    />
+                                </svg>
+                                {copiedStates[`synced-${viewingLyrics!.id}`] ? "Copied" : "Copy"}
+                            </button>
+                        </div>
+                        <pre
+                            class="bg-indigo-50 p-4 rounded-lg border border-indigo-200 text-sm overflow-x-auto whitespace-pre-wrap text-indigo-900">{viewingLyrics.syncedLyrics}</pre>
+                    </div>
+                {:else if activeTab === "plain" && viewingLyrics.plainLyrics}
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-indigo-900 flex items-center gap-2">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="1.5"
+                                    stroke="currentColor"
+                                    class="size-5"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0-1.125.504-1.125 1.125V11.25a9 9 0 0 0-9-9Z"
+                                    />
+                                </svg>
+                                Plain Lyrics
+                            </h3>
+                            <button
+                                onclick={() =>
+                                    copyToClipboard(viewingLyrics!.plainLyrics!, "Plain lyrics", `plain-${viewingLyrics!.id}`)}
+                                class="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-colors"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="1.5"
+                                    stroke="currentColor"
+                                    class="size-4"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184"
+                                    />
+                                </svg>
+                                {copiedStates[`plain-${viewingLyrics!.id}`] ? "Copied" : "Copy"}
+                            </button>
+                        </div>
+                        <div class="bg-indigo-50 p-4 rounded-lg border border-indigo-200 text-sm whitespace-pre-wrap text-indigo-900">
+                            {viewingLyrics.plainLyrics}
+                        </div>
+                    </div>
+                {:else if viewingLyrics.syncedLyrics && !viewingLyrics.plainLyrics}
+                    <!-- Only synced lyrics available -->
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-indigo-900 flex items-center gap-2">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="1.5"
+                                    stroke="currentColor"
+                                    class="size-5"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                                    />
+                                </svg>
+                                Synced Lyrics (LRC Format)
+                            </h3>
+                            <button
+                                onclick={() =>
+                                    copyToClipboard(viewingLyrics!.syncedLyrics!, "Synced lyrics", `synced-${viewingLyrics!.id}`)}
+                                class="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-colors"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="1.5"
+                                    stroke="currentColor"
+                                    class="size-4"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184"
+                                    />
+                                </svg>
+                                {copiedStates[`synced-${viewingLyrics!.id}`] ? "Copied" : "Copy"}
+                            </button>
+                        </div>
+                        <pre
+                            class="bg-indigo-50 p-4 rounded-lg border border-indigo-200 text-sm overflow-x-auto whitespace-pre-wrap text-indigo-900">{viewingLyrics.syncedLyrics}</pre>
+                    </div>
+                {:else if viewingLyrics.plainLyrics && !viewingLyrics.syncedLyrics}
+                    <!-- Only plain lyrics available -->
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-indigo-900 flex items-center gap-2">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="1.5"
+                                    stroke="currentColor"
+                                    class="size-5"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0-1.125.504-1.125 1.125V11.25a9 9 0 0 0-9-9Z"
+                                    />
+                                </svg>
+                                Plain Lyrics
+                            </h3>
+                            <button
+                                onclick={() =>
+                                    copyToClipboard(viewingLyrics!.plainLyrics!, "Plain lyrics", `plain-${viewingLyrics!.id}`)}
+                                class="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-colors"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke-width="1.5"
+                                    stroke="currentColor"
+                                    class="size-4"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184"
+                                    />
+                                </svg>
+                                {copiedStates[`plain-${viewingLyrics!.id}`] ? "Copied" : "Copy"}
+                            </button>
+                        </div>
+                        <div class="bg-indigo-50 p-4 rounded-lg border border-indigo-200 text-sm whitespace-pre-wrap text-indigo-900">
+                            {viewingLyrics.plainLyrics}
+                        </div>
+                    </div>
+                {:else}
+                    <!-- No lyrics available -->
+                    <div class="text-center py-8 text-indigo-600">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke-width="1.5"
+                            stroke="currentColor"
+                            class="size-12 mx-auto mb-4 text-indigo-400"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0-1.125.504-1.125 1.125V11.25a9 9 0 0 0-9-9Z"
+                            />
+                        </svg>
+                        <p class="text-lg mb-2">No lyrics available</p>
+                        <p class="text-sm">This track doesn't have any lyrics in the database.</p>
+                    </div>
+                {/if}
             </div>
 
             <!-- Modal Footer -->
-            <div class="flex justify-end p-6 border-t border-gray-200 bg-gray-50 flex-shrink-0">
+            <div class="flex justify-end p-6 border-t border-indigo-200 bg-indigo-50 flex-shrink-0">
                 <button
                     onclick={closeLyricsViewer}
-                    class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+                    class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
                 >
                     Close
                 </button>
