@@ -794,7 +794,7 @@
                                     d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
                                 />
                             </svg>
-                            Synced Lyrics (LRC)
+                            Synced Lyrics
                         </div>
                     </button>
                     <button
@@ -844,7 +844,7 @@
                                         d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
                                     />
                                 </svg>
-                                Synced Lyrics (LRC Format)
+                                Synced Lyrics
                             </h3>
                             <button
                                 onclick={() =>
@@ -1034,14 +1034,7 @@
             </div>
 
             <!-- Modal Footer -->
-            <div class="flex justify-end p-6 border-t border-indigo-200 bg-indigo-50 flex-shrink-0">
-                <button
-                    onclick={closeLyricsViewer}
-                    class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
-                >
-                    Close
-                </button>
-            </div>
+            <div class="flex justify-end p-6 border-t border-indigo-200 bg-indigo-50 flex-shrink-0"></div>
         </div>
     </div>
 {/if}
