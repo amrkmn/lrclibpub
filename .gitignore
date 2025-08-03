@@ -28,3 +28,6 @@ solver/zig-out
 
 # Serena
 .serena/cache
+
+# Crush
+.crush
