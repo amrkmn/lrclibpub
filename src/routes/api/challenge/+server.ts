@@ -5,6 +5,9 @@ export const POST: RequestHandler = async () => {
     try {
         const response = await fetch("https://lrclib.net/api/request-challenge", {
             method: "POST",
+            headers: {
+                "Lrclib-Client": "LRCLIBpub v1.0.0 (https://github.com/amrkmn/lrclibpub)",
+            },
         });
 
         if (!response.ok) {

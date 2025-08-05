@@ -142,7 +142,12 @@
             if (searchParams.duration) params.append("duration", (searchParams.duration * 1000).toString());
             params.append("page", page.toString());
 
-            const response = await fetch(`https://lrclib.net/api/search?${params.toString()}`);
+            const response = await fetch(`https://lrclib.net/api/search?${params.toString()}`, {
+                method: "GET",
+                headers: {
+                    "Lrclib-Client": "LRCLIBpub v1.0.0 (https://github.com/amrkmn/lrclibpub)",
+                },
+            });
 
             if (!response.ok) {
                 throw new Error(`Search failed: ${response.status} ${response.statusText}`);
