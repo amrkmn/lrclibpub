@@ -1,24 +1,8 @@
 {
     "name": "lrclibpub",
     "version": "0.0.1",
-    "devDependencies": {
-        "@sveltejs/adapter-cloudflare": "^7.1.2",
-        "@sveltejs/kit": "^2.27.0",
-        "@sveltejs/vite-plugin-svelte": "^5.1.1",
-        "@tailwindcss/vite": "^4.1.11",
-        "@types/bun": "^1.2.19",
-        "numify": "^1.1.2",
-        "svelte": "^5.37.3",
-        "svelte-check": "^4.3.1",
-        "tailwindcss": "^4.1.11",
-        "typescript": "^5.9.2",
-        "vite": "^6.3.5",
-        "vite-plugin-devtools-json": "^0.2.1",
-        "vite-plugin-top-level-await": "^1.6.0",
-        "vite-plugin-wasm": "^3.5.0",
-        "wrangler": "^4.27.0"
-    },
     "private": true,
+    "type": "module",
     "scripts": {
         "dev": "vite dev",
         "build": "vite build",
@@ -30,5 +14,25 @@
         "deploy": "bun run build && wrangler deploy",
         "cf:dev": "wrangler dev .svelte-kit/cloudflare/_worker.js --compatibility-date=2024-09-23"
     },
-    "type": "module"
+    "trustedDependencies": [
+        "@swc/core",
+        "@tailwindcss/oxide"
+    ],
+    "devDependencies": {
+        "@sveltejs/adapter-cloudflare": "^7.2.1",
+        "@sveltejs/kit": "^2.31.1",
+        "@sveltejs/vite-plugin-svelte": "^5.1.1",
+        "@tailwindcss/vite": "^4.1.12",
+        "@types/bun": "^1.2.20",
+        "numify": "^1.1.2",
+        "svelte": "^5.38.1",
+        "svelte-check": "^4.3.1",
+        "tailwindcss": "^4.1.12",
+        "typescript": "^5.9.2",
+        "vite": "^6.3.5",
+        "vite-plugin-devtools-json": "^0.2.1",
+        "vite-plugin-top-level-await": "^1.6.0",
+        "vite-plugin-wasm": "^3.5.0",
+        "wrangler": "^4.30.0"
+    }
 }
