@@ -1,17 +1,34 @@
-# Project Overview
+# LRCLIBpub Project Overview
 
-This project, named `lrclibpub`, is a SvelteKit application with a Cloudflare Workers backend. It also includes a WebAssembly (WASM) module written in Zig, which appears to be a solver of some kind.
+## Purpose
+LRCLIBpub is a modern web application for publishing lyrics to the LRCLIB database. It provides a user-friendly interface for submitting both plain and synchronized (LRC) lyrics.
+
+## Main Technologies
+- **Frontend Framework**: SvelteKit
+- **Styling**: TailwindCSS
+- **Build Tool**: Vite
+- **Deployment**: Cloudflare Workers
+- **Performance**: WebAssembly (Zig) for proof-of-work computation
+
+## Key Features
+- Clean interface for submitting lyrics
+- Support for both plain and synced (LRC) lyrics
+- LRC file upload and parsing
+- High-performance proof-of-work using WebAssembly
+- Real-time progress tracking during proof-of-work
 
 ## Architecture
+- **Frontend**: SvelteKit application with a main page (`+page.svelte`) handling form submission and UI logic.
+- **WebAssembly**: A WASM module (`lrclibpub.wasm`) handles the computationally intensive proof-of-work challenge solving, interfacing through a web worker (`worker.ts`).
+- **API Routes**: Server-side API endpoints (`/api/challenge`, `/api/publish`) handle communication with the LRCLIB API for security and to manage the publishing process.
+- **Lyrics Parsing**: Utilities (`lrc.ts`) for parsing LRC files into plain and synced lyrics formats.
 
-- **Frontend:** The frontend is built with Svelte 5 and styled with Tailwind CSS v4.
-- **Backend:** The backend is powered by Cloudflare Workers, providing a serverless API.
-- **WASM:** A Zig-based solver is compiled to WASM and integrated into the application, likely for performance-critical tasks.
-- **Build System:** The project uses Vite for building and Bun as the package manager and runtime.
+## Development Workflow
+1.  Fill in track and artist information.
+2.  Add lyrics by pasting text or uploading an LRC file.
+3.  Click "Publish Lyrics" and wait for the proof-of-work (handled by WASM in a web worker) to complete.
+4.  The server-side API endpoints handle the final submission to LRCLIB.
 
-## Codebase Structure
-
-- `src/routes`: Contains the SvelteKit page and API routes.
-- `src/lib`: Holds shared library code, including the worker script (`worker.ts`) and TypeScript type definitions (`types.ts`).
-- `solver/`: Contains the Zig source code for the WASM module.
-- `scripts/`: Includes helper scripts, such as the one for building the WASM module.
+## Prerequisites for Development
+- Node.js/Bun
+- For WASM development: Zig compiler (latest stable)
