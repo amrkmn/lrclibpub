@@ -9,8 +9,6 @@
         track_name: "",
         artist_name: "",
         album_name: "",
-        duration: undefined,
-        page: 1,
     });
 
     // UI state
@@ -19,7 +17,6 @@
     let success = $state<string | null>(null);
     let results = $state<LyricResult[]>([]);
     let hasSearched = $state(false);
-    let currentPage = $state(1);
     let searchMode = $state<"general" | "specific">("general");
     let viewingLyrics = $state<LyricResult | null>(null);
     let wasAutoSwitched = $state(false);
@@ -108,12 +105,9 @@
             track_name: "",
             artist_name: "",
             album_name: "",
-            duration: undefined,
-            page: 1,
         };
         results = [];
         hasSearched = false;
-        currentPage = 1;
         error = null;
         wasAutoSwitched = false;
         // Reset to general mode when resetting form
@@ -123,7 +117,7 @@
     /**
      * Perform search against LRCLIB API
      */
-    async function performSearch(page: number = 1) {
+    async function performSearch() {
         if (!searchParams.q && !searchParams.track_name) {
             setError("Please provide either a search term or track name");
             return;
@@ -139,8 +133,6 @@
             if (searchParams.track_name) params.append("track_name", searchParams.track_name);
             if (searchParams.artist_name) params.append("artist_name", searchParams.artist_name);
             if (searchParams.album_name) params.append("album_name", searchParams.album_name);
-            if (searchParams.duration) params.append("duration", (searchParams.duration * 1000).toString());
-            params.append("page", page.toString());
 
             const response = await fetch(`https://lrclib.net/api/search?${params.toString()}`, {
                 method: "GET",
@@ -156,7 +148,6 @@
             const data: LyricResult[] = await response.json();
             results = data;
             hasSearched = true;
-            currentPage = page;
         } catch (err) {
             console.error("Search error:", err);
             setError(err instanceof Error ? err.message : "Failed to search lyrics");
@@ -171,15 +162,7 @@
      */
     async function handleSubmit(event: SubmitEvent) {
         event.preventDefault();
-        await performSearch(1);
-    }
-
-    /**
-     * Handle pagination
-     */
-    async function changePage(newPage: number) {
-        if (newPage < 1) return;
-        await performSearch(newPage);
+        await performSearch();
     }
 
     /**
@@ -188,22 +171,14 @@
     function formatDuration(duration?: number): string {
         if (!duration) return "Unknown";
         const minutes = Math.floor(duration / 60);
-        const remainingSeconds = duration % 60;
+        const remainingSeconds = Math.floor(duration % 60);
         return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
-    }
-
-    /**
-     * Truncate text to specified length
-     */
-    function truncateText(text: string, maxLength: number): string {
-        if (text.length <= maxLength) return text;
-        return text.substring(0, maxLength) + "...";
     }
 
     // Reactive logic to auto-switch search mode
     $effect(() => {
         // Only auto-switch if user is in general mode and adds specific search criteria
-        if (searchMode === "general" && (searchParams.artist_name || searchParams.album_name || searchParams.duration)) {
+        if (searchMode === "general" && (searchParams.artist_name || searchParams.album_name)) {
             searchMode = "specific";
             wasAutoSwitched = true;
             // When auto-switching to specific, move q to track_name if track_name is empty
@@ -211,13 +186,7 @@
                 searchParams.track_name = searchParams.q;
                 searchParams.q = "";
             }
-        } else if (
-            searchMode === "specific" &&
-            wasAutoSwitched &&
-            !searchParams.artist_name &&
-            !searchParams.album_name &&
-            !searchParams.duration
-        ) {
+        } else if (searchMode === "specific" && wasAutoSwitched && !searchParams.artist_name && !searchParams.album_name) {
             // Auto-switch back to general if all specific criteria are cleared (but only if it was auto-switched)
             searchMode = "general";
             wasAutoSwitched = false;
@@ -229,6 +198,20 @@
         }
     });
 
+    // Prevent background scroll when modal is open
+    $effect(() => {
+        if (viewingLyrics) {
+            document.body.classList.add("overflow-hidden");
+        } else {
+            document.body.classList.remove("overflow-hidden");
+        }
+
+        // Cleanup on component destroy
+        return () => {
+            document.body.classList.remove("overflow-hidden");
+        };
+    });
+
     // Load search parameters from URL on mount
     onMount(() => {
         const urlParams = new URLSearchParams(window.location.search);
@@ -236,7 +219,6 @@
         const trackParam = urlParams.get("track");
         const artistParam = urlParams.get("artist");
         const albumParam = urlParams.get("album");
-        const durationParam = urlParams.get("duration");
 
         if (qParam) {
             searchParams.q = decodeURIComponent(qParam);
@@ -248,7 +230,6 @@
         }
         if (artistParam) searchParams.artist_name = decodeURIComponent(artistParam);
         if (albumParam) searchParams.album_name = decodeURIComponent(albumParam);
-        if (durationParam) searchParams.duration = parseInt(decodeURIComponent(durationParam));
 
         // Auto-search if parameters are present
         if (qParam || trackParam) {
@@ -425,18 +406,6 @@
                         />
                     </div>
                 </div>
-
-                <div>
-                    <label for="duration" class="block text-sm font-medium mb-1">Duration (seconds)</label>
-                    <input
-                        type="number"
-                        id="duration"
-                        bind:value={searchParams.duration}
-                        min="0"
-                        placeholder="Song duration in seconds (optional)"
-                        class="w-full px-3 py-2 border border-indigo-200 rounded-md focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
-                    />
-                </div>
             </div>
 
             <!-- Form Actions -->
@@ -566,128 +535,9 @@
                                         </button>
                                     {/if}
                                 </div>
-
-                                <!-- Lyrics Preview -->
-                                {#if !result.instrumental}
-                                    <div class="space-y-3">
-                                        {#if result.syncedLyrics}
-                                            <div>
-                                                <h4 class="text-sm font-medium text-indigo-800 mb-2 flex items-center gap-1">
-                                                    <svg
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        fill="none"
-                                                        viewBox="0 0 24 24"
-                                                        stroke-width="1.5"
-                                                        stroke="currentColor"
-                                                        class="size-4"
-                                                    >
-                                                        <path
-                                                            stroke-linecap="round"
-                                                            stroke-linejoin="round"
-                                                            d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                                                        />
-                                                    </svg>
-                                                    Synced Lyrics (LRC Format)
-                                                </h4>
-                                                <pre
-                                                    class="text-sm bg-indigo-50 p-3 rounded-md border border-indigo-200 overflow-x-auto">{truncateText(
-                                                        result.syncedLyrics,
-                                                        200
-                                                    )}</pre>
-                                            </div>
-                                        {/if}
-                                        {#if result.plainLyrics}
-                                            <div>
-                                                <h4 class="text-sm font-medium text-indigo-800 mb-2 flex items-center gap-1">
-                                                    <svg
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        fill="none"
-                                                        viewBox="0 0 24 24"
-                                                        stroke-width="1.5"
-                                                        stroke="currentColor"
-                                                        class="size-4"
-                                                    >
-                                                        <path
-                                                            stroke-linecap="round"
-                                                            stroke-linejoin="round"
-                                                            d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0-1.125.504-1.125 1.125V11.25a9 9 0 0 0-9-9Z"
-                                                        />
-                                                    </svg>
-                                                    Plain Lyrics
-                                                </h4>
-                                                <div class="text-sm bg-gray-50 p-3 rounded-md border border-gray-200">
-                                                    {truncateText(result.plainLyrics, 200)}
-                                                </div>
-                                            </div>
-                                        {/if}
-                                    </div>
-                                {:else}
-                                    <div class="text-center py-4 text-indigo-600">
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            stroke-width="1.5"
-                                            stroke="currentColor"
-                                            class="size-8 mx-auto mb-2 text-indigo-400"
-                                        >
-                                            <path
-                                                stroke-linecap="round"
-                                                stroke-linejoin="round"
-                                                d="m9 9 10.5-3m0 6.553v3.75a2.25 2.25 0 0 1-1.632 2.163l-1.32.377a1.803 1.803 0 1 1-.99-3.467l2.31-.66a2.25 2.25 0 0 0 1.632-2.163Zm0 0V2.25L9 5.25v10.303m0 0v3.75a2.25 2.25 0 0 1-1.632 2.163l-1.32.377a1.803 1.803 0 1 1-.99-3.467l2.31-.66A2.25 2.25 0 0 0 9 15.553Z"
-                                            />
-                                        </svg>
-                                        <p class="text-sm">This track is marked as instrumental</p>
-                                    </div>
-                                {/if}
                             </div>
                         {/each}
                     </div>
-
-                    <!-- Pagination -->
-                    {#if results.length === 10}
-                        <div class="p-6 border-t border-indigo-200">
-                            <div class="flex justify-between items-center">
-                                <button
-                                    onclick={() => changePage(currentPage - 1)}
-                                    disabled={currentPage <= 1 || isSearching}
-                                    class="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-indigo-300 disabled:cursor-not-allowed transition-colors"
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke-width="1.5"
-                                        stroke="currentColor"
-                                        class="size-4"
-                                    >
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
-                                    </svg>
-                                    Previous
-                                </button>
-
-                                <span class="text-indigo-700 font-medium">Page {currentPage}</span>
-
-                                <button
-                                    onclick={() => changePage(currentPage + 1)}
-                                    disabled={isSearching}
-                                    class="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-indigo-300 disabled:cursor-not-allowed transition-colors"
-                                >
-                                    Next
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke-width="1.5"
-                                        stroke="currentColor"
-                                        class="size-4"
-                                    >
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-                    {/if}
                 {/if}
             </div>
         {/if}
@@ -747,7 +597,17 @@
 
 <!-- Lyrics Viewer Modal -->
 {#if viewingLyrics}
-    <div class="fixed inset-0 bg-black/50 bg-opacity-75 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div
+        class="fixed inset-0 bg-black/50 bg-opacity-75 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+        role="button"
+        tabindex="0"
+        onclick={(e: MouseEvent) => {
+            if (e.target === e.currentTarget) closeLyricsViewer();
+        }}
+        onkeydown={(e: KeyboardEvent) => {
+            if (e.key === "Escape") closeLyricsViewer();
+        }}
+    >
         <div
             class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[85vh] overflow-hidden flex flex-col border border-indigo-200"
         >
