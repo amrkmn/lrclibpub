@@ -308,7 +308,7 @@
                                 }
                                 searchParams.track_name = "";
                             }}
-                            class="px-3 py-1 text-sm rounded-md transition-colors {searchMode === 'general'
+                            class="px-3 py-1 text-sm rounded-md transition-colors cursor-pointer {searchMode === 'general'
                                 ? 'bg-indigo-600 text-white'
                                 : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'}"
                         >
@@ -325,7 +325,7 @@
                                 }
                                 searchParams.q = "";
                             }}
-                            class="px-3 py-1 text-sm rounded-md transition-colors {searchMode === 'specific'
+                            class="px-3 py-1 text-sm rounded-md transition-colors cursor-pointer {searchMode === 'specific'
                                 ? 'bg-indigo-600 text-white'
                                 : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'}"
                         >
@@ -413,7 +413,7 @@
                 <button
                     type="submit"
                     disabled={isSearching}
-                    class="flex-1 bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 disabled:bg-indigo-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                    class="flex-1 bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 disabled:bg-indigo-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 cursor-pointer"
                 >
                     {#if isSearching}
                         <svg class="animate-spin size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -446,7 +446,7 @@
                 <button
                     type="button"
                     onclick={resetForm}
-                    class="px-4 py-2 border border-indigo-300 text-indigo-700 rounded-md hover:bg-indigo-50 transition-colors"
+                    class="px-4 py-2 border border-indigo-300 text-indigo-700 rounded-md hover:bg-indigo-50 transition-colors cursor-pointer"
                 >
                     Reset
                 </button>
@@ -510,7 +510,7 @@
                                     {#if !result.instrumental && (result.plainLyrics || result.syncedLyrics)}
                                         <button
                                             onclick={() => viewLyrics(result)}
-                                            class="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-colors"
+                                            class="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-colors cursor-pointer"
                                         >
                                             <svg
                                                 xmlns="http://www.w3.org/2000/svg"
@@ -620,7 +620,7 @@
                 <button
                     onclick={closeLyricsViewer}
                     aria-label="Close lyrics viewer"
-                    class="p-2 hover:bg-indigo-100 rounded-lg transition-colors text-indigo-700"
+                    class="p-2 hover:bg-indigo-100 rounded-lg transition-colors text-indigo-700 cursor-pointer"
                 >
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -640,7 +640,7 @@
                 <div class="flex border-b border-indigo-200 bg-white">
                     <button
                         onclick={() => (activeTab = "synced")}
-                        class="flex-1 px-6 py-3 text-sm font-medium transition-colors border-b-2 {activeTab === 'synced'
+                        class="flex-1 px-6 py-3 text-sm font-medium transition-colors border-b-2 cursor-pointer {activeTab === 'synced'
                             ? 'text-indigo-600 border-indigo-600 bg-indigo-50'
                             : 'text-indigo-700 border-transparent hover:text-indigo-600 hover:bg-indigo-50'}"
                     >
@@ -664,7 +664,7 @@
                     </button>
                     <button
                         onclick={() => (activeTab = "plain")}
-                        class="flex-1 px-6 py-3 text-sm font-medium transition-colors border-b-2 {activeTab === 'plain'
+                        class="flex-1 px-6 py-3 text-sm font-medium transition-colors border-b-2 cursor-pointer {activeTab === 'plain'
                             ? 'text-indigo-600 border-indigo-600 bg-indigo-50'
                             : 'text-indigo-700 border-transparent hover:text-indigo-600 hover:bg-indigo-50'}"
                     >
@@ -714,7 +714,7 @@
                             <button
                                 onclick={() =>
                                     copyToClipboard(viewingLyrics!.syncedLyrics!, "Synced lyrics", `synced-${viewingLyrics!.id}`)}
-                                class="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-colors"
+                                class="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-colors cursor-pointer"
                             >
                                 <svg
                                     xmlns="http://www.w3.org/2000/svg"
@@ -759,7 +759,7 @@
                             <button
                                 onclick={() =>
                                     copyToClipboard(viewingLyrics!.plainLyrics!, "Plain lyrics", `plain-${viewingLyrics!.id}`)}
-                                class="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-colors"
+                                class="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-colors cursor-pointer"
                             >
                                 <svg
                                     xmlns="http://www.w3.org/2000/svg"
@@ -806,7 +806,7 @@
                             <button
                                 onclick={() =>
                                     copyToClipboard(viewingLyrics!.syncedLyrics!, "Synced lyrics", `synced-${viewingLyrics!.id}`)}
-                                class="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-colors"
+                                class="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-colors cursor-pointer"
                             >
                                 <svg
                                     xmlns="http://www.w3.org/2000/svg"
@@ -852,7 +852,7 @@
                             <button
                                 onclick={() =>
                                     copyToClipboard(viewingLyrics!.plainLyrics!, "Plain lyrics", `plain-${viewingLyrics!.id}`)}
-                                class="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-colors"
+                                class="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-colors cursor-pointer"
                             >
                                 <svg
                                     xmlns="http://www.w3.org/2000/svg"
