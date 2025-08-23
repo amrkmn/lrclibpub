@@ -9,7 +9,7 @@ export default defineConfig({
     plugins: [sveltekit(), wasm(), topLevelAwait(), devtoolsJson(), tailwindcss()],
     worker: {
         format: "es",
-        plugins: () => [wasm()],
+        plugins: () => [wasm(), topLevelAwait()],
     },
     optimizeDeps: {
         exclude: ["@sveltejs/kit"],
