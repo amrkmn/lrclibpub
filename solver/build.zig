@@ -9,9 +9,11 @@ pub fn build(b: *std.Build) void {
 
     const wasm_lib = b.addExecutable(.{
         .name = "lrclibpub",
-        .root_source_file = b.path("src/main.zig"),
-        .target = target,
-        .optimize = .ReleaseFast,
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/main.zig"),
+            .target = target,
+            .optimize = .ReleaseFast,
+        }),
     });
 
     if (builtin.zig_version.major == 0 and builtin.zig_version.minor < 14) {
