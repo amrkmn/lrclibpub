@@ -778,9 +778,8 @@
                                 {copiedStates[`plain-${viewingLyrics!.id}`] ? "Copied" : "Copy"}
                             </button>
                         </div>
-                        <div class="bg-indigo-50 p-4 rounded-lg border border-indigo-200 text-sm whitespace-pre-wrap text-indigo-900">
-                            {viewingLyrics.plainLyrics}
-                        </div>
+                        <pre
+                            class="bg-indigo-50 p-4 rounded-lg border border-indigo-200 text-sm whitespace-pre-wrap text-indigo-900">{viewingLyrics.plainLyrics}</pre>
                     </div>
                 {:else if viewingLyrics.syncedLyrics && !viewingLyrics.plainLyrics}
                     <!-- Only synced lyrics available -->
@@ -871,9 +870,8 @@
                                 {copiedStates[`plain-${viewingLyrics!.id}`] ? "Copied" : "Copy"}
                             </button>
                         </div>
-                        <div class="bg-indigo-50 p-4 rounded-lg border border-indigo-200 text-sm whitespace-pre-wrap text-indigo-900">
-                            {viewingLyrics.plainLyrics}
-                        </div>
+                        <pre
+                            class="bg-indigo-50 p-4 rounded-lg border border-indigo-200 text-sm whitespace-pre-wrap text-indigo-900">{viewingLyrics.plainLyrics}</pre>
                     </div>
                 {:else}
                     <!-- No lyrics available -->
