@@ -25,9 +25,3 @@ vite.config.ts.timestamp-*
 # Zig
 solver/.zig-cache
 solver/zig-out
-
-# Serena
-.serena/cache
-
-# Crush
-.crush
