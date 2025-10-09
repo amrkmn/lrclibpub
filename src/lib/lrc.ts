@@ -60,3 +60,75 @@ export function parseLRCFile(content: string): ParsedLRC {
         plainLyrics: plainLines.join("\n"),
     };
 }
+
+/**
+ * Generate LRC format content from LyricResult data
+ */
+export function generateLRCContent(result: {
+    trackName: string;
+    artistName: string;
+    albumName?: string;
+    duration?: number;
+    syncedLyrics?: string;
+    plainLyrics?: string;
+}): string {
+    const lines: string[] = [];
+    
+    // Add metadata
+    lines.push(`[ti:${result.trackName}]`);
+    lines.push(`[ar:${result.artistName}]`);
+    if (result.albumName) {
+        lines.push(`[al:${result.albumName}]`);
+    }
+    if (result.duration) {
+        const minutes = Math.floor(result.duration / 60);
+        const seconds = Math.floor(result.duration % 60);
+        lines.push(`[length:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}]`);
+    }
+    
+    // Add offset (default to 0)
+    lines.push(`[offset:0]`);
+    
+    // Add lyrics
+    if (result.syncedLyrics) {
+        // Use synced lyrics if available
+        lines.push('');
+        lines.push(result.syncedLyrics);
+    } else if (result.plainLyrics) {
+        // For plain lyrics, add them without timestamps
+        lines.push('');
+        const plainLines = result.plainLyrics.split('\n');
+        plainLines.forEach(line => {
+            if (line.trim()) {
+                lines.push(line);
+            }
+        });
+    }
+    
+    return lines.join('\n');
+}
+
+/**
+ * Download content as a file
+ */
+export function downloadFile(content: string, filename: string, mimeType: string = 'text/plain') {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+/**
+ * Sanitize filename by removing invalid characters
+ */
+export function sanitizeFilename(filename: string): string {
+    return filename
+        .replace(/[<>:"/\\|?*]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
