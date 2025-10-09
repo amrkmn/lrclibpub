@@ -1,8 +1,9 @@
 <script lang="ts">
     import Footer from "$lib/components/Footer.svelte";
+    import { ClockIcon, CopyIcon, DocumentIcon, DownloadIcon, EyeIcon, SearchIcon } from "$lib/components/icons";
+    import { downloadFile, generateLRCContent, sanitizeFilename } from "$lib/lrc";
     import type { LyricResult, SearchParams } from "$lib/types";
     import { onMount } from "svelte";
-    import { generateLRCContent, downloadFile, sanitizeFilename } from "$lib/lrc";
 
     // Search form state
     let searchParams = $state<SearchParams>({
@@ -182,7 +183,7 @@
     function downloadLRC(result: LyricResult) {
         const lrcContent = generateLRCContent(result);
         const filename = `${sanitizeFilename(result.artistName)} - ${sanitizeFilename(result.trackName)}.lrc`;
-        downloadFile(lrcContent, filename, 'text/plain');
+        downloadFile(lrcContent, filename, "text/plain");
         setSuccess(`Downloaded ${filename}`);
     }
 
@@ -259,20 +260,7 @@
         <!-- Header -->
         <header class="flex md:items-center items-start justify-between mb-8 md:flex-row flex-col gap-6">
             <h1 class="text-3xl font-bold flex items-center gap-2">
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke-width="1.5"
-                    stroke="currentColor"
-                    class="size-8"
-                >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
-                    />
-                </svg>
+                <SearchIcon size="size-8" />
                 Search Lyrics
             </h1>
             <a
@@ -437,20 +425,7 @@
                         </svg>
                         Searching...
                     {:else}
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke-width="1.5"
-                            stroke="currentColor"
-                            class="size-4"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
-                            />
-                        </svg>
+                        <SearchIcon />
                         Search
                     {/if}
                 </button>
@@ -478,20 +453,7 @@
 
                 {#if results.length === 0}
                     <div class="p-8 text-center text-indigo-600">
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke-width="1.5"
-                            stroke="currentColor"
-                            class="size-12 mx-auto mb-4 text-indigo-400"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
-                            />
-                        </svg>
+                        <SearchIcon size="size-12" className="mx-auto mb-4 text-indigo-400" />
                         <p class="text-lg mb-2">No lyrics found</p>
                         <p class="text-sm">Try adjusting your search terms or using different keywords.</p>
                     </div>
@@ -520,40 +482,14 @@
                                                     <span
                                                         class="px-2 py-1 bg-blue-100 text-blue-700 rounded-md text-xs flex items-center gap-1"
                                                     >
-                                                        <svg
-                                                            xmlns="http://www.w3.org/2000/svg"
-                                                            fill="none"
-                                                            viewBox="0 0 24 24"
-                                                            stroke-width="1.5"
-                                                            stroke="currentColor"
-                                                            class="size-3"
-                                                        >
-                                                            <path
-                                                                stroke-linecap="round"
-                                                                stroke-linejoin="round"
-                                                                d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                                                            />
-                                                        </svg>
+                                                        <ClockIcon size="size-3" />
                                                         Synced
                                                     </span>
                                                 {:else if result.plainLyrics}
                                                     <span
                                                         class="px-2 py-1 bg-purple-100 text-purple-700 rounded-md text-xs flex items-center gap-1"
                                                     >
-                                                        <svg
-                                                            xmlns="http://www.w3.org/2000/svg"
-                                                            fill="none"
-                                                            viewBox="0 0 24 24"
-                                                            stroke-width="1.5"
-                                                            stroke="currentColor"
-                                                            class="size-3"
-                                                        >
-                                                            <path
-                                                                stroke-linecap="round"
-                                                                stroke-linejoin="round"
-                                                                d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0-1.125.504-1.125 1.125V11.25a9 9 0 0 0-9-9Z"
-                                                            />
-                                                        </svg>
+                                                        <DocumentIcon size="size-3" />
                                                         Plain
                                                     </span>
                                                 {/if}
@@ -565,25 +501,7 @@
                                             onclick={() => viewLyrics(result)}
                                             class="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-colors cursor-pointer"
                                         >
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                                stroke-width="1.5"
-                                                stroke="currentColor"
-                                                class="size-4"
-                                            >
-                                                <path
-                                                    stroke-linecap="round"
-                                                    stroke-linejoin="round"
-                                                    d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"
-                                                />
-                                                <path
-                                                    stroke-linecap="round"
-                                                    stroke-linejoin="round"
-                                                    d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
-                                                />
-                                            </svg>
+                                            <EyeIcon />
                                             View Full
                                         </button>
                                     {/if}
@@ -887,20 +805,7 @@
                     <div>
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="text-lg font-semibold text-indigo-900 flex items-center gap-2">
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke-width="1.5"
-                                    stroke="currentColor"
-                                    class="size-5"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                                    />
-                                </svg>
+                                <ClockIcon size="size-5" />
                                 Synced Lyrics (LRC Format)
                             </h3>
                             <div class="flex gap-2">
@@ -909,20 +814,7 @@
                                         copyToClipboard(viewingLyrics!.syncedLyrics!, "Synced lyrics", `synced-${viewingLyrics!.id}`)}
                                     class="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-colors cursor-pointer"
                                 >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke-width="1.5"
-                                        stroke="currentColor"
-                                        class="size-4"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184"
-                                        />
-                                    </svg>
+                                    <CopyIcon />
                                     {copiedStates[`synced-${viewingLyrics!.id}`] ? "Copied" : "Copy"}
                                 </button>
                                 <button
@@ -931,20 +823,7 @@
                                     title="Download as LRC file"
                                     aria-label="Download lyrics as LRC file"
                                 >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke-width="1.5"
-                                        stroke="currentColor"
-                                        class="size-4"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"
-                                        />
-                                    </svg>
+                                    <DownloadIcon />
                                     Download
                                 </button>
                             </div>
@@ -957,20 +836,7 @@
                     <div>
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="text-lg font-semibold text-indigo-900 flex items-center gap-2">
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke-width="1.5"
-                                    stroke="currentColor"
-                                    class="size-5"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0-1.125.504-1.125 1.125V11.25a9 9 0 0 0-9-9Z"
-                                    />
-                                </svg>
+                                <DocumentIcon size="size-5" />
                                 Plain Lyrics
                             </h3>
                             <div class="flex gap-2">
@@ -979,20 +845,7 @@
                                         copyToClipboard(viewingLyrics!.plainLyrics!, "Plain lyrics", `plain-${viewingLyrics!.id}`)}
                                     class="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-colors cursor-pointer"
                                 >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke-width="1.5"
-                                        stroke="currentColor"
-                                        class="size-4"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184"
-                                        />
-                                    </svg>
+                                    <CopyIcon />
                                     {copiedStates[`plain-${viewingLyrics!.id}`] ? "Copied" : "Copy"}
                                 </button>
                                 <button
@@ -1001,20 +854,7 @@
                                     title="Download as LRC file"
                                     aria-label="Download lyrics as LRC file"
                                 >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke-width="1.5"
-                                        stroke="currentColor"
-                                        class="size-4"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"
-                                        />
-                                    </svg>
+                                    <DownloadIcon />
                                     Download
                                 </button>
                             </div>
