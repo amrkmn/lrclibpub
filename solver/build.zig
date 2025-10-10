@@ -16,8 +16,8 @@ pub fn build(b: *std.Build) void {
         }),
     });
 
-    if (builtin.zig_version.major == 0 and builtin.zig_version.minor < 14) {
-        @compileError("Building requires Zig 0.14.0 or later");
+    if (builtin.zig_version.major == 0 and builtin.zig_version.minor < 15) {
+        @compileError("Building requires Zig 0.15.0 or later");
     }
 
     // Set entry to disabled for WebAssembly library
