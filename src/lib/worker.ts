@@ -1,142 +1,162 @@
+// Cache for the WebAssembly module
 let wasmModule: WebAssembly.WebAssemblyInstantiatedSource | null = null;
-let lastUpdate = Date.now();
-let startTime = Date.now();
+let lastProgressUpdate = 0;
+let startTime = 0;
 
+// Initialize WebAssembly module
 async function initWasm() {
     if (!wasmModule) {
         const wasmResponse = await fetch(new URL("./wasm/lrclibpub.wasm", import.meta.url));
-        const wasmBytes = await wasmResponse.arrayBuffer();
 
+        // Define JavaScript functions that WebAssembly can call
         const importObject = {
             env: {
-                print: (value: number) => {
-                    // Track progress more efficiently
-                    const now = Date.now();
-                    const elapsed = now - startTime;
-                    const rate = value / (elapsed / 1000);
+                print: (nonce: number) => {
+                    // Send progress updates to main thread (throttled)
+                    const now = performance.now();
+                    if (now - lastProgressUpdate >= 500) {
+                        const elapsed = now - startTime;
+                        const rate = nonce / (elapsed / 1000);
 
-                    if (now - lastUpdate >= 300) {
                         self.postMessage({
                             type: "progress",
-                            attempts: value,
+                            attempts: nonce,
                             time: now,
                             rate: Math.round(rate),
                             elapsed: elapsed,
                         });
-                        lastUpdate = now;
+                        lastProgressUpdate = now;
                     }
                 },
             },
         };
 
-        wasmModule = await WebAssembly.instantiate(wasmBytes, importObject);
+        // Load and compile WebAssembly module
+        wasmModule = await WebAssembly.instantiateStreaming(wasmResponse, importObject);
     }
 }
 
-// Helper function to safely get memory view
-function getMemoryView(memory: WebAssembly.Memory): Uint8Array {
-    return new Uint8Array(memory.buffer);
-}
-
-// Track memory allocations for better management
+// Simple memory allocation in WebAssembly
 let nextMemoryOffset = 0;
-let memoryReserveSize = 1024; // Reserve 1KB for WASM internal use
 
-// Helper function to allocate memory in WASM
 function allocateInWasm(exports: any, size: number): number {
     const memory = exports.memory as WebAssembly.Memory;
     const totalMemory = memory.buffer.byteLength;
 
-    // Initialize offset if this is the first allocation
-    if (nextMemoryOffset === 0)
-        // Start allocations at 80% of memory to avoid conflicts with WASM stack/heap
-        nextMemoryOffset = Math.floor(totalMemory * 0.8);
+    // Start allocating at 70% of memory to avoid conflicts
+    if (nextMemoryOffset === 0) {
+        nextMemoryOffset = Math.floor(totalMemory * 0.7);
+    }
 
-    // Ensure size is at least 1 byte
-    const bytesToAllocate = Math.max(1, size);
+    // Align to 8-byte boundaries for better performance
+    const alignedSize = Math.ceil(Math.max(1, size) / 8) * 8;
 
-    // Check if we have enough space left
-    if (nextMemoryOffset + bytesToAllocate + memoryReserveSize > totalMemory)
-        // Could grow memory here if needed using memory.grow()
-        console.warn("Warning: Running low on WASM memory");
+    // Check if we have enough space
+    if (nextMemoryOffset + alignedSize + 2048 > totalMemory) {
+        // Reset to 30% if we run out of space
+        nextMemoryOffset = Math.floor(totalMemory * 0.3);
+        if (nextMemoryOffset + alignedSize + 2048 > totalMemory) {
+            console.warn("Warning: Not enough WASM memory");
+            return 0;
+        }
+    }
 
-    // Save the current offset for returning to caller
-    const allocatedOffset = nextMemoryOffset;
-
-    // Move the offset forward for the next allocation (with 8-byte alignment)
-    nextMemoryOffset += Math.ceil(bytesToAllocate / 8) * 8;
-
-    return allocatedOffset;
+    const offset = nextMemoryOffset;
+    nextMemoryOffset += alignedSize;
+    return offset;
 }
 
+// Convert string to bytes efficiently
+function stringToBytes(str: string): Uint8Array {
+    const encoder = new TextEncoder();
+    return encoder.encode(str);
+}
+
+// Handle messages from main thread
 self.onmessage = async (e) => {
     const { prefix, target } = e.data;
-    startTime = Date.now();
-    lastUpdate = startTime;
+    startTime = performance.now();
+    lastProgressUpdate = startTime;
 
     try {
+        // Initialize WebAssembly module
+        const initStart = performance.now();
         await initWasm();
+        const initTime = performance.now() - initStart;
 
         if (!wasmModule) {
-            throw new Error("WASM module not initialized");
+            throw new Error("Failed to initialize WebAssembly module");
         }
 
         const instance = wasmModule.instance;
         const exports = instance.exports as any;
 
-        // Validate required exports
-        const requiredExports = ["solveChallenge", "memory"];
-        for (const exportName of requiredExports) {
-            if (!exports[exportName]) {
-                throw new Error(`Required WASM export '${exportName}' not found. Available: ${Object.keys(exports).join(", ")}`);
-            }
+        // Check that required functions are available
+        if (!exports.solveChallenge || !exports.memory) {
+            throw new Error("WebAssembly module missing required exports");
         }
 
-        // Encode strings to bytes
-        const prefixBytes = new TextEncoder().encode(prefix);
-        const targetBytes = new TextEncoder().encode(target);
+        // Convert strings to bytes
+        const encodingStart = performance.now();
+        const prefixBytes = stringToBytes(prefix);
+        const targetBytes = stringToBytes(target);
+        const encodingTime = performance.now() - encodingStart;
 
-        const memory = exports.memory as WebAssembly.Memory;
-
-        // Allocate memory safely
+        // Allocate memory in WebAssembly
+        const allocationStart = performance.now();
         const prefixOffset = allocateInWasm(exports, prefixBytes.length);
-        const targetOffset = prefixOffset + prefixBytes.length + 64; // Add padding
+        const targetOffset = allocateInWasm(exports, targetBytes.length);
+        const allocationTime = performance.now() - allocationStart;
 
-        // Get fresh memory view each time
-        let memoryView = getMemoryView(memory);
+        if (prefixOffset === 0 || targetOffset === 0) {
+            throw new Error("Failed to allocate WebAssembly memory");
+        }
 
-        // Write data to allocated memory
+        // Copy data to WebAssembly memory
+        const memory = exports.memory as WebAssembly.Memory;
+        const memoryView = new Uint8Array(memory.buffer);
         memoryView.set(prefixBytes, prefixOffset);
         memoryView.set(targetBytes, targetOffset);
 
-        console.log(`Starting challenge: prefix="${prefix}", target="${target}"`);
-        console.log(`Memory allocated - prefix: ${prefixOffset}, target: ${targetOffset}`);
-
-        // Call the solveChallenge function - now returns the nonce value directly
+        // Run the proof-of-work solver
+        const computationStart = performance.now();
         const nonceValue = exports.solveChallenge(prefixOffset, prefixBytes.length, targetOffset, targetBytes.length);
+        const computationTime = performance.now() - computationStart;
 
         if (nonceValue === 0) {
-            throw new Error("WASM solveChallenge returned 0 (error)");
+            throw new Error("WebAssembly solver failed");
         }
 
-        // Convert the numeric nonce to a string
+        const totalTime = performance.now() - startTime;
         const nonce = nonceValue.toString();
 
-        const totalTime = Date.now() - startTime;
-        console.log(`Challenge solved! Nonce: ${nonce}, Time: ${totalTime}ms`);
-
+        // Send success result back to main thread
         self.postMessage({
             type: "success",
             nonce,
-            totalTime,
-            finalAttempts: Number(nonceValue) + 1, // Use the numeric value directly
+            totalTime: Math.round(totalTime),
+            finalAttempts: Number(nonceValue) + 1,
+            performance: {
+                initTime: Math.round(initTime),
+                encodingTime: Math.round(encodingTime),
+                allocationTime: Math.round(allocationTime),
+                computationTime: Math.round(computationTime),
+                totalTime: Math.round(totalTime),
+            },
         });
     } catch (err) {
         const error = err instanceof Error ? err.message : "Unknown error";
         console.error("Worker error:", error);
+
+        // Send error back to main thread
         self.postMessage({
             type: "error",
             error,
         });
     }
 };
+
+// Cleanup when worker is terminated
+self.addEventListener("beforeunload", () => {
+    wasmModule = null;
+});

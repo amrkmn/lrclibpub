@@ -23,10 +23,17 @@ pub fn build(b: *std.Build) void {
     // Set entry to disabled for WebAssembly library
     wasm_lib.entry = .disabled;
 
-    // Set initial memory and enable memory export
-    wasm_lib.initial_memory = 2 * 1024 * 1024; // 2MB initial memory
-    wasm_lib.max_memory = 16 * 1024 * 1024; // 16MB max memory
+    // Optimized memory settings for better performance
+    wasm_lib.initial_memory = 1 * 1024 * 1024; // 1MB initial memory (reduced for faster startup)
+    wasm_lib.max_memory = 8 * 1024 * 1024; // 8MB max memory (sufficient for our use case)
     wasm_lib.export_memory = true;
+
+    // Enable WebAssembly optimizations
+    wasm_lib.stack_size = 64 * 1024; // 64KB stack size (optimized for our algorithm)
+
+    // Optimize for size and speed
+    wasm_lib.root_module.strip = true; // Strip debug symbols for smaller binary
+    wasm_lib.root_module.single_threaded = true; // Single-threaded optimization
 
     // Enable function exports - remove import_symbols as it's for imports, not exports
     wasm_lib.rdynamic = true;
