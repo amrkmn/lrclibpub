@@ -19,7 +19,7 @@ LRCLIBpub is a modern web application for publishing lyrics to the LRCLIB databa
 
 ## Architecture
 - **Frontend**: SvelteKit application with a main page (`+page.svelte`) handling form submission and UI logic.
-- **WebAssembly**: A WASM module (`lrclibpub.wasm`) handles the computationally intensive proof-of-work challenge solving, interfacing through a web worker (`worker.ts`).
+- **WebAssembly**: A WASM module (`solver.wasm`) handles the computationally intensive proof-of-work challenge solving, interfacing through a web worker (`worker.ts`).
 - **API Routes**: Server-side API endpoints (`/api/challenge`, `/api/publish`) handle communication with the LRCLIB API for security and to manage the publishing process.
 - **Lyrics Parsing**: Utilities (`lrc.ts`) for parsing LRC files into plain and synced lyrics formats.
 

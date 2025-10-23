@@ -4,7 +4,7 @@ let startTime = Date.now();
 
 async function initWasm() {
     if (!wasmModule) {
-        const wasmResponse = await fetch(new URL("./wasm/lrclibpub.wasm", import.meta.url));
+        const wasmResponse = await fetch(new URL("./wasm/solver.wasm", import.meta.url));
         const wasmBytes = await wasmResponse.arrayBuffer();
 
         const importObject = {

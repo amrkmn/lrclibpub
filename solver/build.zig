@@ -8,7 +8,7 @@ pub fn build(b: *std.Build) void {
     });
 
     const wasm_lib = b.addExecutable(.{
-        .name = "lrclibpub",
+        .name = "solver",
         .root_module = b.createModule(.{
             .root_source_file = b.path("src/main.zig"),
             .target = target,

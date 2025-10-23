@@ -36,9 +36,9 @@ try {
     await $`zig build`;
 
     // Copy the built WASM file
-    const srcPath = join(solverDir, "zig-out", "bin", "lrclibpub.wasm");
+    const srcPath = join(solverDir, "zig-out", "bin", "solver.wasm");
     const destDir = join(projectRoot, "src", "lib", "wasm");
-    const destPath = join(destDir, "lrclibpub.wasm");
+    const destPath = join(destDir, "solver.wasm");
 
     if (!existsSync(srcPath)) {
         throw new Error(`Built WASM file not found: ${srcPath}`);
