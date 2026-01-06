@@ -136,15 +136,13 @@
             if (searchParams.artist_name) params.append("artist_name", searchParams.artist_name);
             if (searchParams.album_name) params.append("album_name", searchParams.album_name);
 
-            const response = await fetch(`https://lrclib.net/api/search?${params.toString()}`, {
+            const response = await fetch(`/api/search?${params.toString()}`, {
                 method: "GET",
-                headers: {
-                    "Lrclib-Client": "LRCLIBpub v1.0.0 (https://github.com/amrkmn/lrclibpub)",
-                },
             });
 
             if (!response.ok) {
-                throw new Error(`Search failed: ${response.status} ${response.statusText}`);
+                const errorData = await response.json().catch(() => ({ message: "Search failed" }));
+                throw new Error(errorData.message || `Search failed: ${response.status}`);
             }
 
             const data: LyricResult[] = await response.json();
@@ -886,7 +884,7 @@
             </div>
 
             <!-- Modal Footer -->
-            <div class="flex justify-end p-6 border-t border-indigo-200 bg-indigo-50 flex-shrink-0"></div>
+            <div class="flex justify-end p-6 border-t border-indigo-200 bg-indigo-50 shrink-0"></div>
         </div>
     </div>
 {/if}

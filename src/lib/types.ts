@@ -37,3 +37,6 @@ export interface LyricResult {
     syncedLyrics?: string;
     instrumental: boolean;
 }
+
+export const USER_AGENT = "LRCLIBpub v1.0.0 (https://github.com/amrkmn/lrclibpub)";
+

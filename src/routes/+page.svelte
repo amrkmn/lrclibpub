@@ -73,6 +73,12 @@
             const response = await fetch("/api/challenge", {
                 method: "POST",
             });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ message: "Failed to get challenge" }));
+                throw new Error(errorData.message || "Failed to get challenge");
+            }
+
             return await response.json();
         } catch (err) {
             throw new Error("Failed to get challenge");
@@ -187,17 +193,9 @@
                 }),
             });
 
-            // Handle API response
-            let data;
-            try {
-                const responseText = await response.text();
-                data = responseText ? JSON.parse(responseText) : { message: "No response content" };
-            } catch (parseError) {
-                data = { message: "Failed to parse response" };
-            }
-
             if (!response.ok) {
-                throw new Error(data.message || "Failed to publish lyrics");
+                const errorData = await response.json().catch(() => ({ message: "Failed to publish lyrics" }));
+                throw new Error(errorData.message || "Failed to publish lyrics");
             }
 
             setSuccess();

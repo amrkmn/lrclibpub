@@ -23,19 +23,19 @@
   ],
   "devDependencies": {
     "@sveltejs/adapter-cloudflare": "^7.2.4",
-    "@sveltejs/kit": "^2.49.1",
+    "@sveltejs/kit": "^2.49.3",
     "@sveltejs/vite-plugin-svelte": "^5.1.1",
-    "@tailwindcss/vite": "^4.1.17",
-    "@types/bun": "^1.3.3",
+    "@tailwindcss/vite": "^4.1.18",
+    "@types/bun": "^1.3.5",
     "numify": "^1.1.2",
-    "svelte": "^5.45.6",
-    "svelte-check": "^4.3.4",
-    "tailwindcss": "^4.1.17",
+    "svelte": "^5.46.1",
+    "svelte-check": "^4.3.5",
+    "tailwindcss": "^4.1.18",
     "typescript": "^5.9.3",
     "vite": "^6.4.1",
     "vite-plugin-devtools-json": "^1.0.0",
     "vite-plugin-top-level-await": "^1.6.0",
     "vite-plugin-wasm": "^3.5.0",
-    "wrangler": "^4.53.0"
+    "wrangler": "^4.54.0"
   }
 }

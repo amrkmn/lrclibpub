@@ -1,28 +1,29 @@
-import { error, json } from "@sveltejs/kit";
+import { json } from "@sveltejs/kit";
+import { USER_AGENT } from "$lib/types";
 import type { RequestHandler } from "./$types";
 
 export const POST: RequestHandler = async ({ request }) => {
     const publishToken = request.headers.get("X-Publish-Token");
 
     if (!publishToken) {
-        throw error(400, "Missing publish token");
+        return json({ message: "Missing publish token", name: "ValidationError", statusCode: 400 }, { status: 400 });
     }
 
     let body;
     try {
         body = await request.json();
     } catch (err) {
-        throw error(400, "Invalid JSON body");
+        return json({ message: "Invalid JSON body", name: "ValidationError", statusCode: 400 }, { status: 400 });
     }
 
     const { trackName, artistName, albumName, duration, plainLyrics, syncedLyrics } = body;
 
     // Validate required fields
     if (!trackName?.trim()) {
-        throw error(400, "Track name is required");
+        return json({ message: "Track name is required", name: "ValidationError", statusCode: 400 }, { status: 400 });
     }
     if (!artistName?.trim()) {
-        throw error(400, "Artist name is required");
+        return json({ message: "Artist name is required", name: "ValidationError", statusCode: 400 }, { status: 400 });
     }
 
     // Build the request body for LRCLIB
@@ -51,7 +52,7 @@ export const POST: RequestHandler = async ({ request }) => {
             headers: {
                 "Content-Type": "application/json",
                 "X-Publish-Token": publishToken,
-                "Lrclib-Client": "LRCLIBpub v1.0.0 (https://github.com/amrkmn/lrclibpub)",
+                "Lrclib-Client": USER_AGENT,
             },
             body: JSON.stringify(lrclibBody),
         });
@@ -65,14 +66,21 @@ export const POST: RequestHandler = async ({ request }) => {
         }
 
         if (!response.ok) {
-            throw error(response.status, data.message || "Failed to publish lyrics");
+            const errorData = await response
+                .json()
+                .catch(() => ({
+                    message: data.message || "Failed to publish lyrics",
+                    name: "UnknownError",
+                    statusCode: response.status,
+                }));
+            return json(errorData, { status: response.status });
         }
 
         return json(data);
     } catch (err) {
         if (err instanceof Error && err.message.includes("fetch")) {
-            throw error(503, "Failed to connect to LRCLIB API");
+            return json({ message: "Failed to connect to LRCLIB API", name: "UnknownError", statusCode: 503 }, { status: 503 });
         }
-        throw err;
+        return json({ message: "An unexpected error occurred", name: "UnknownError", statusCode: 500 }, { status: 500 });
     }
 };

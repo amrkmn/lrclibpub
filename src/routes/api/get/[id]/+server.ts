@@ -2,10 +2,15 @@ import { json } from "@sveltejs/kit";
 import { USER_AGENT } from "$lib/types";
 import type { RequestHandler } from "./$types";
 
-export const POST: RequestHandler = async () => {
+export const GET: RequestHandler = async ({ params }) => {
+    const { id } = params;
+
+    if (!id || isNaN(Number(id))) {
+        return json({ message: "Invalid lyrics ID", name: "ValidationError", statusCode: 400 }, { status: 400 });
+    }
+
     try {
-        const response = await fetch("https://lrclib.net/api/request-challenge", {
-            method: "POST",
+        const response = await fetch(`https://lrclib.net/api/get/${id}`, {
             headers: {
                 "Lrclib-Client": USER_AGENT,
             },
@@ -18,12 +23,12 @@ export const POST: RequestHandler = async () => {
             return json(errorData, { status: response.status });
         }
 
-        const challenge = await response.json();
-        return json(challenge);
-    } catch (error) {
-        if (error instanceof Error && error.message.includes("fetch")) {
+        const data = await response.json();
+        return json(data);
+    } catch (err) {
+        if (err instanceof Error && err.message.includes("fetch")) {
             return json({ message: "Failed to connect to LRCLIB API", name: "UnknownError", statusCode: 503 }, { status: 503 });
         }
-        return json({ message: "Failed to get challenge from LRCLIB", name: "UnknownError", statusCode: 500 }, { status: 500 });
+        return json({ message: "An unexpected error occurred", name: "UnknownError", statusCode: 500 }, { status: 500 });
     }
 };
