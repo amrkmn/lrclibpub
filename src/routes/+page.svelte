@@ -70,7 +70,7 @@
      */
     async function requestChallenge(): Promise<Challenge> {
         try {
-            const response = await fetch("/api/challenge", {
+            const response = await fetch("/api/request-challenge", {
                 method: "POST",
             });
 
