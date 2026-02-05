@@ -4,20 +4,29 @@ const sha2 = std.crypto.hash.sha2;
 // Console log function imported from JavaScript (can be disabled for performance)
 extern "env" fn print(value: f64) void;
 
-// Global result buffer for nonce string
-var result_buffer: [64]u8 = undefined;
-var result_len: u32 = 0;
-
-// Compare hash result with target (left-to-right, like Rust)
-fn verifyNonce(result: []const u8, target: []const u8) bool {
-    if (result.len != target.len) return false;
-
-    // Compare from most significant bytes first
-    for (0..result.len) |i| {
-        if (result[i] > target[i]) return false;
-        if (result[i] < target[i]) return true;
+// Fast decimal conversion - write backwards, then reverse
+fn writeNonceDecimal(buf: []u8, value: u64) usize {
+    if (value == 0) {
+        buf[0] = '0';
+        return 1;
     }
-    return true; // Equal to target
+
+    var i: usize = 0;
+    var v = value;
+    while (v > 0) {
+        buf[i] = '0' + @as(u8, @intCast(v % 10));
+        v /= 10;
+        i += 1;
+    }
+
+    // Reverse the digits
+    std.mem.reverse(u8, buf[0..i]);
+    return i;
+}
+
+// Compare hash result with target (hash must be <= target)
+fn verifyNonce(result: []const u8, target: []const u8) bool {
+    return std.mem.order(u8, result, target) == .lt;
 }
 
 // Convert hex string to bytes
@@ -57,9 +66,9 @@ export fn solveChallenge(
     while (true) {
         const start = prefix_len_usize;
 
-        // Write nonce as decimal into buffer
-        const nonce_str = std.fmt.bufPrint(input_buffer[start..], "{}", .{nonce}) catch return 0;
-        const input = input_buffer[0 .. start + nonce_str.len];
+        // Write nonce as decimal into buffer (fast path)
+        const nonce_len = writeNonceDecimal(input_buffer[start..], nonce);
+        const input = input_buffer[0 .. start + nonce_len];
 
         // Hash
         var ctx = sha2.Sha256.init(.{});
