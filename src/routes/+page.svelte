@@ -1,6 +1,15 @@
 <script lang="ts">
     import Footer from "$lib/components/Footer.svelte";
-    import { parseLRCFile } from "$lib/lrc";
+    import ValidationWarning from "$lib/components/ValidationWarning.svelte";
+    import {
+        normalizeAndSortLRC,
+        stripELRCWordTimestamps,
+    } from "$lib/lrc/normalizer";
+    import { parseLRCFile } from "$lib/lrc/parser";
+    import {
+        validateSyncedLyrics,
+        type LRCValidationResult
+    } from "$lib/lrc/validator";
     import type { Challenge, FormData } from "$lib/types";
     import { numify } from "numify";
     import { onMount } from "svelte";
@@ -19,9 +28,19 @@
     let isSubmitting = $state(false);
     let error = $state<string | null>(null);
     let success = $state(false);
-    let solveProgress = $state({ attempts: 0, nonce: 0, startTime: 0, rate: 0 });
+    let solveProgress = $state({
+        attempts: 0,
+        nonce: 0,
+        startTime: 0,
+        rate: 0,
+    });
     let solveTime = $state(0);
     let solveAttempts = $state(0);
+
+    // Validation state
+    let validationResult = $state<LRCValidationResult | null>(null);
+    let showValidationWarning = $state(false);
+    let validationDismissed = $state(false);
 
     // Timeouts for notifications
     let errorTimeout: number;
@@ -75,7 +94,9 @@
             });
 
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ message: "Failed to get challenge" }));
+                const errorData = await response
+                    .json()
+                    .catch(() => ({ message: "Failed to get challenge" }));
                 throw new Error(errorData.message || "Failed to get challenge");
             }
 
@@ -96,11 +117,68 @@
         formData.plainLyrics = "";
         formData.syncedLyrics = "";
 
+        // Reset validation state
+        validationResult = null;
+        showValidationWarning = false;
+        validationDismissed = false;
+
         // Reset file input
-        const fileInput = document.getElementById("lrcFile") as HTMLInputElement;
+        const fileInput = document.getElementById(
+            "lrcFile",
+        ) as HTMLInputElement;
         if (fileInput) {
             fileInput.value = "";
         }
+    }
+
+    /**
+     * Validate synced lyrics and update validation state
+     */
+    function runValidation() {
+        if (!formData.syncedLyrics.trim()) {
+            validationResult = null;
+            showValidationWarning = false;
+            validationDismissed = false;
+            return;
+        }
+
+        validationResult = validateSyncedLyrics(formData.syncedLyrics);
+        showValidationWarning =
+            !validationResult.isValid && !validationDismissed;
+    }
+
+    /**
+     * Handle normalization (multi-timestamp expansion)
+     */
+    function handleNormalize() {
+        if (!validationResult) return;
+
+        const result = normalizeAndSortLRC(formData.syncedLyrics);
+        formData.syncedLyrics = result.normalized;
+
+        // Re-run validation
+        runValidation();
+    }
+
+    /**
+     * Handle ELRC word timestamp stripping
+     */
+    function handleStripELRC() {
+        if (!validationResult) return;
+
+        const result = stripELRCWordTimestamps(formData.syncedLyrics);
+        formData.syncedLyrics = result.stripped;
+
+        // Re-run validation
+        runValidation();
+    }
+
+    /**
+     * Dismiss validation warning
+     */
+    function dismissValidation() {
+        validationDismissed = true;
+        showValidationWarning = false;
     }
 
     /**
@@ -128,8 +206,14 @@
 
             // Check if at least one of the lyrics fields is filled for non-instrumental tracks
             if (!formData.plainLyrics.trim() && !formData.syncedLyrics.trim()) {
-                if (!confirm("No lyrics provided. Is this an instrumental track?")) {
-                    setError("Please provide lyrics or confirm if this is an instrumental track");
+                if (
+                    !confirm(
+                        "No lyrics provided. Is this an instrumental track?",
+                    )
+                ) {
+                    setError(
+                        "Please provide lyrics or confirm if this is an instrumental track",
+                    );
                     return;
                 }
             }
@@ -138,7 +222,12 @@
             const challenge = await requestChallenge();
 
             // Solve challenge using Web Worker
-            solveProgress = { attempts: 0, nonce: 0, startTime: Date.now(), rate: 0 };
+            solveProgress = {
+                attempts: 0,
+                nonce: 0,
+                startTime: Date.now(),
+                rate: 0,
+            };
 
             worker = new Worker(new URL("../lib/worker.ts", import.meta.url), {
                 type: "module",
@@ -149,7 +238,15 @@
                 if (!worker) return;
 
                 worker.onmessage = (e) => {
-                    const { type, attempts, rate, nonce, error, finalAttempts, totalTime } = e.data;
+                    const {
+                        type,
+                        attempts,
+                        rate,
+                        nonce,
+                        error,
+                        finalAttempts,
+                        totalTime,
+                    } = e.data;
 
                     if (type === "progress") {
                         solveProgress = {
@@ -187,21 +284,31 @@
                     trackName: formData.trackName.trim(),
                     artistName: formData.artistName.trim(),
                     albumName: formData.albumName?.trim() || "",
-                    duration: formData.duration ? Number.parseInt(formData.duration, 10) : undefined,
+                    duration: formData.duration
+                        ? Number.parseInt(formData.duration, 10)
+                        : undefined,
                     plainLyrics: formData.plainLyrics?.trim() || "",
                     syncedLyrics: formData.syncedLyrics?.trim() || "",
                 }),
             });
 
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ message: "Failed to publish lyrics" }));
-                throw new Error(errorData.message || "Failed to publish lyrics");
+                const errorData = await response
+                    .json()
+                    .catch(() => ({ message: "Failed to publish lyrics" }));
+                throw new Error(
+                    errorData.message || "Failed to publish lyrics",
+                );
             }
 
             setSuccess();
             resetForm();
         } catch (err) {
-            setError(err instanceof Error ? err.message : "An unknown error occurred");
+            setError(
+                err instanceof Error
+                    ? err.message
+                    : "An unknown error occurred",
+            );
         } finally {
             isSubmitting = false;
             // Clean up worker
@@ -223,14 +330,17 @@
         if (titleParam) formData.trackName = decodeURIComponent(titleParam);
         if (artistParam) formData.artistName = decodeURIComponent(artistParam);
         if (albumParam) formData.albumName = decodeURIComponent(albumParam);
-        if (durationParam) formData.duration = decodeURIComponent(durationParam);
+        if (durationParam)
+            formData.duration = decodeURIComponent(durationParam);
     });
 </script>
 
 <div class="min-h-screen bg-[#E0E7FF] text-indigo-900 p-6">
     <div class="max-w-2xl mx-auto">
         <!-- Header -->
-        <header class="flex md:items-center items-start justify-between mb-8 md:flex-row flex-col gap-6">
+        <header
+            class="flex md:items-center items-start justify-between mb-8 md:flex-row flex-col gap-6"
+        >
             <h1 class="text-3xl font-bold flex items-center gap-2">
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -240,7 +350,11 @@
                     stroke="currentColor"
                     class="size-8"
                 >
-                    <path stroke-linecap="round" stroke-linejoin="round" d="m9 9 6-6m0 0 6 6m-6-6v12a6 6 0 0 1-12 0v-3" />
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="m9 9 6-6m0 0 6 6m-6-6v12a6 6 0 0 1-12 0v-3"
+                    />
                 </svg>
                 LRCLIBpub
             </h1>
@@ -269,13 +383,20 @@
         <!-- Introduction -->
         <div class="text-indigo-800 mb-6">
             <p>
-                Welcome to LRCLIBpub - a simple web interface to publish lyrics to the
-                <a href="https://lrclib.net" target="_blank" rel="noopener noreferrer" class="underline">LRCLIB</a>
+                Welcome to LRCLIBpub - a simple web interface to publish lyrics
+                to the
+                <a
+                    href="https://lrclib.net"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="underline">LRCLIB</a
+                >
                 lyrics database.
             </p>
             <p class="mt-3">
-                Please be mindful of the quality and accuracy of the lyrics you submit. This is a crowd-sourced effort, and your
-                contributions enhance the database for everyone.
+                Please be mindful of the quality and accuracy of the lyrics you
+                submit. This is a crowd-sourced effort, and your contributions
+                enhance the database for everyone.
             </p>
         </div>
 
@@ -326,10 +447,14 @@
                                 />
                             </svg>
                             <div>
-                                <div class="font-medium">Lyrics published successfully!</div>
+                                <div class="font-medium">
+                                    Lyrics published successfully!
+                                </div>
                                 {#if solveTime > 0}
                                     <div class="text-sm text-green-600">
-                                        Proof-of-work solved in {formatSolveTime(solveTime)} with {solveAttempts} attempts.
+                                        Proof-of-work solved in {formatSolveTime(
+                                            solveTime,
+                                        )} with {solveAttempts} attempts.
                                     </div>
                                 {/if}
                             </div>
@@ -338,21 +463,45 @@
 
                     <!-- Progress notification -->
                     {#if isSubmitting}
-                        <div class="bg-white p-4 rounded-lg shadow-lg border border-indigo-200 pr-5">
+                        <div
+                            class="bg-white p-4 rounded-lg shadow-lg border border-indigo-200 pr-5"
+                        >
                             <div class="flex items-center gap-3">
-                                <div class="animate-spin rounded-full h-4 w-4 border-2 border-indigo-600 border-t-transparent"></div>
+                                <div
+                                    class="animate-spin rounded-full h-4 w-4 border-2 border-indigo-600 border-t-transparent"
+                                ></div>
                                 <div class="flex flex-col">
                                     {#if solveProgress.attempts > 0}
-                                        <p class="text-sm font-medium text-indigo-800">Solving proof of work...</p>
-                                        <div class="flex gap-2 text-xs text-indigo-600 justify-between">
-                                            <span>{((Date.now() - solveProgress.startTime) / 1000).toFixed(1)}s</span>
+                                        <p
+                                            class="text-sm font-medium text-indigo-800"
+                                        >
+                                            Solving proof of work...
+                                        </p>
+                                        <div
+                                            class="flex gap-2 text-xs text-indigo-600 justify-between"
+                                        >
+                                            <span
+                                                >{(
+                                                    (Date.now() -
+                                                        solveProgress.startTime) /
+                                                    1000
+                                                ).toFixed(1)}s</span
+                                            >
                                             <span>•</span>
-                                            <span>{numify(solveProgress.rate)} hashes/s</span>
+                                            <span
+                                                >{numify(solveProgress.rate)} hashes/s</span
+                                            >
                                             <span>•</span>
-                                            <span>Attempts: {solveProgress.attempts}</span>
+                                            <span
+                                                >Attempts: {solveProgress.attempts}</span
+                                            >
                                         </div>
                                     {:else}
-                                        <p class="text-sm font-medium text-indigo-800">Publishing...</p>
+                                        <p
+                                            class="text-sm font-medium text-indigo-800"
+                                        >
+                                            Publishing...
+                                        </p>
                                     {/if}
                                 </div>
                             </div>
@@ -365,7 +514,11 @@
             <div class="space-y-4">
                 <!-- Track Name -->
                 <div>
-                    <label for="trackName" class="block text-sm font-medium mb-1">Track Name *</label>
+                    <label
+                        for="trackName"
+                        class="block text-sm font-medium mb-1"
+                        >Track Name *</label
+                    >
                     <input
                         type="text"
                         id="trackName"
@@ -378,7 +531,11 @@
 
                 <!-- Artist Name -->
                 <div>
-                    <label for="artistName" class="block text-sm font-medium mb-1">Artist Name *</label>
+                    <label
+                        for="artistName"
+                        class="block text-sm font-medium mb-1"
+                        >Artist Name *</label
+                    >
                     <input
                         type="text"
                         id="artistName"
@@ -391,7 +548,10 @@
 
                 <!-- Album Name -->
                 <div>
-                    <label for="albumName" class="block text-sm font-medium mb-1">Album Name</label>
+                    <label
+                        for="albumName"
+                        class="block text-sm font-medium mb-1">Album Name</label
+                    >
                     <input
                         type="text"
                         id="albumName"
@@ -403,7 +563,9 @@
 
                 <!-- Duration -->
                 <div>
-                    <label for="duration" class="block text-sm font-medium mb-1">Duration (seconds)</label>
+                    <label for="duration" class="block text-sm font-medium mb-1"
+                        >Duration (seconds)</label
+                    >
                     <input
                         type="number"
                         id="duration"
@@ -415,7 +577,9 @@
                 </div>
 
                 <!-- Lyrics input section -->
-                <div class="space-y-4 p-4 border border-dashed border-indigo-300 rounded-lg bg-indigo-50/50">
+                <div
+                    class="space-y-4 p-4 border border-dashed border-indigo-300 rounded-lg bg-indigo-50/50"
+                >
                     <div class="flex items-center gap-4 flex-wrap">
                         <h3 class="text-lg font-semibold">Lyrics Input</h3>
                         <!-- LRC file upload -->
@@ -432,7 +596,9 @@
                                 stroke-linecap="round"
                                 stroke-linejoin="round"
                             >
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <path
+                                    d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+                                />
                                 <polyline points="17 8 12 3 7 8" />
                                 <line x1="12" y1="3" x2="12" y2="15" />
                             </svg>
@@ -444,25 +610,38 @@
                             accept=".lrc"
                             class="hidden"
                             onchange={async (e) => {
-                                const file = (e.target as HTMLInputElement)?.files?.[0];
+                                const file = (e.target as HTMLInputElement)
+                                    ?.files?.[0];
                                 if (!file) return;
 
                                 const content = await file.text();
                                 const parsed = parseLRCFile(content);
 
-                                if (parsed.title) formData.trackName = parsed.title;
-                                if (parsed.artist) formData.artistName = parsed.artist;
-                                if (parsed.album) formData.albumName = parsed.album;
-                                if (parsed.duration) formData.duration = parsed.duration;
+                                if (parsed.title)
+                                    formData.trackName = parsed.title;
+                                if (parsed.artist)
+                                    formData.artistName = parsed.artist;
+                                if (parsed.album)
+                                    formData.albumName = parsed.album;
+                                if (parsed.duration)
+                                    formData.duration = parsed.duration;
                                 formData.plainLyrics = parsed.plainLyrics;
                                 formData.syncedLyrics = parsed.syncedLyrics;
+
+                                // Run validation after loading file
+                                validationDismissed = false;
+                                runValidation();
                             }}
                         />
                     </div>
 
                     <!-- Plain lyrics input -->
                     <div>
-                        <label for="plainLyrics" class="block text-sm font-medium mb-1">Plain Lyrics</label>
+                        <label
+                            for="plainLyrics"
+                            class="block text-sm font-medium mb-1"
+                            >Plain Lyrics</label
+                        >
                         <textarea
                             id="plainLyrics"
                             bind:value={formData.plainLyrics}
@@ -470,40 +649,105 @@
                             placeholder="Enter plain lyrics text here"
                             class="w-full px-3 py-2 border border-indigo-200 rounded-md focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
                         ></textarea>
-                        <p class="mt-1 text-sm text-indigo-600">Leave both lyrics fields empty for instrumental tracks</p>
+                        <p class="mt-1 text-sm text-indigo-600">
+                            Leave both lyrics fields empty for instrumental
+                            tracks
+                        </p>
                     </div>
 
                     <!-- Synced lyrics input -->
                     <div>
-                        <label for="syncedLyrics" class="block text-sm font-medium mb-1">Synced Lyrics</label>
+                        <label
+                            for="syncedLyrics"
+                            class="block text-sm font-medium mb-1"
+                            >Synced Lyrics</label
+                        >
                         <div class="relative">
                             <textarea
                                 id="syncedLyrics"
                                 bind:value={formData.syncedLyrics}
+                                oninput={() => {
+                                    validationDismissed = false;
+                                    runValidation();
+                                }}
                                 rows="6"
                                 class="w-full px-3 py-2 border border-indigo-200 rounded-md focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
                                 placeholder="[mm:ss.xx] Lyrics line"
                             ></textarea>
                         </div>
                     </div>
+
+                    <!-- Validation Warning -->
+                    {#if showValidationWarning && validationResult}
+                        <ValidationWarning
+                            {validationResult}
+                            onNormalize={handleNormalize}
+                            onStripELRC={handleStripELRC}
+                            onDismiss={dismissValidation}
+                        />
+                    {/if}
                 </div>
             </div>
 
-            <!-- Warning message -->
-            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4 rounded-md">
-                <p class="text-sm text-yellow-800">
-                    <strong>Note:</strong> Publishing involves solving a proof-of-work challenge. This process may take several minutes
-                    and could slow down your browser or device.
-                </p>
+            <!-- Warning messages -->
+            <div class="space-y-4">
+                <!-- LRCLIB permanent submission warning -->
+                <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-md">
+                    <div class="flex items-start gap-3">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke-width="2"
+                            stroke="currentColor"
+                            class="size-5 text-red-600 shrink-0 mt-0.5"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"
+                            />
+                        </svg>
+                        <div class="text-sm text-red-800">
+                            <p class="font-semibold mb-1">Before You Proceed</p>
+                            <ul class="list-disc list-inside space-y-1">
+                                <li>
+                                    LRCLIB does not allow deletion or
+                                    replacement of lyrics via their API.
+                                </li>
+                                <li>
+                                    Once submitted, lyrics are permanent.
+                                    Carefully verify all information before
+                                    publishing.
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Proof-of-work warning -->
+                <div
+                    class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md"
+                >
+                    <p class="text-sm text-yellow-800">
+                        <strong>Note:</strong> Publishing involves solving a proof-of-work
+                        challenge. This process may take several minutes and could
+                        slow down your browser or device.
+                    </p>
+                </div>
             </div>
 
             <!-- Submit button -->
             <button
                 type="submit"
-                disabled={isSubmitting || !formData.trackName.trim() || !formData.artistName.trim()}
+                disabled={isSubmitting ||
+                    !formData.trackName.trim() ||
+                    !formData.artistName.trim()}
                 class="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg hover:cursor-pointer hover:bg-indigo-700 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-                {isSubmitting ? "Publishing, this might take a while..." : "Publish Lyrics"}
+                {isSubmitting
+                    ? "Publishing, this might take a while..."
+                    : "Publish Lyrics"}
             </button>
         </form>
 
