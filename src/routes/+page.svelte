@@ -1,15 +1,9 @@
 <script lang="ts">
+    import { resolve } from "$app/paths";
     import Footer from "$lib/components/Footer.svelte";
-    import ValidationWarning from "$lib/components/ValidationWarning.svelte";
-    import {
-        normalizeAndSortLRC,
-        stripELRCWordTimestamps,
-    } from "$lib/lrc/normalizer";
-    import { parseLRCFile } from "$lib/lrc/parser";
-    import {
-        validateSyncedLyrics,
-        type LRCValidationResult
-    } from "$lib/lrc/validator";
+    import LrcTab from "$lib/components/LrcTab.svelte";
+    import LyricsfileTab from "$lib/components/LyricsfileTab.svelte";
+    import { validateLyricsfileYaml } from "$lib/lyricsfile/validator";
     import type { Challenge, FormData } from "$lib/types";
     import { numify } from "numify";
     import { onMount } from "svelte";
@@ -22,7 +16,11 @@
         duration: "",
         plainLyrics: "",
         syncedLyrics: "",
+        lyricsfile: "",
     });
+
+    // Active publish format
+    let activeFormat = $state<"lrc" | "lyricsfile">("lrc");
 
     // UI state variables
     let isSubmitting = $state(false);
@@ -37,10 +35,7 @@
     let solveTime = $state(0);
     let solveAttempts = $state(0);
 
-    // Validation state
-    let validationResult = $state<LRCValidationResult | null>(null);
-    let showValidationWarning = $state(false);
-    let validationDismissed = $state(false);
+
 
     // Timeouts for notifications
     let errorTimeout: number;
@@ -116,69 +111,21 @@
         formData.duration = "";
         formData.plainLyrics = "";
         formData.syncedLyrics = "";
+        formData.lyricsfile = "";
 
-        // Reset validation state
-        validationResult = null;
-        showValidationWarning = false;
-        validationDismissed = false;
-
-        // Reset file input
+        // Reset file inputs
         const fileInput = document.getElementById(
             "lrcFile",
         ) as HTMLInputElement;
         if (fileInput) {
             fileInput.value = "";
         }
-    }
-
-    /**
-     * Validate synced lyrics and update validation state
-     */
-    function runValidation() {
-        if (!formData.syncedLyrics.trim()) {
-            validationResult = null;
-            showValidationWarning = false;
-            validationDismissed = false;
-            return;
+        const lfFileInput = document.getElementById(
+            "lfFile",
+        ) as HTMLInputElement;
+        if (lfFileInput) {
+            lfFileInput.value = "";
         }
-
-        validationResult = validateSyncedLyrics(formData.syncedLyrics);
-        showValidationWarning =
-            !validationResult.isValid && !validationDismissed;
-    }
-
-    /**
-     * Handle normalization (multi-timestamp expansion)
-     */
-    function handleNormalize() {
-        if (!validationResult) return;
-
-        const result = normalizeAndSortLRC(formData.syncedLyrics);
-        formData.syncedLyrics = result.normalized;
-
-        // Re-run validation
-        runValidation();
-    }
-
-    /**
-     * Handle ELRC word timestamp stripping
-     */
-    function handleStripELRC() {
-        if (!validationResult) return;
-
-        const result = stripELRCWordTimestamps(formData.syncedLyrics);
-        formData.syncedLyrics = result.stripped;
-
-        // Re-run validation
-        runValidation();
-    }
-
-    /**
-     * Dismiss validation warning
-     */
-    function dismissValidation() {
-        validationDismissed = true;
-        showValidationWarning = false;
     }
 
     /**
@@ -204,17 +151,28 @@
                 return;
             }
 
-            // Check if at least one of the lyrics fields is filled for non-instrumental tracks
-            if (!formData.plainLyrics.trim() && !formData.syncedLyrics.trim()) {
-                if (
-                    !confirm(
-                        "No lyrics provided. Is this an instrumental track?",
-                    )
-                ) {
-                    setError(
-                        "Please provide lyrics or confirm if this is an instrumental track",
-                    );
+            if (activeFormat === "lyricsfile") {
+                if (!formData.lyricsfile.trim()) {
+                    setError("Lyricsfile content is required");
                     return;
+                }
+                const lfVal = validateLyricsfileYaml(formData.lyricsfile.trim());
+                if (lfVal.hasErrors) {
+                    setError("Please fix Lyricsfile validation errors before publishing");
+                    return;
+                }
+            } else {
+                if (!formData.plainLyrics.trim() && !formData.syncedLyrics.trim()) {
+                    if (
+                        !confirm(
+                            "No lyrics provided. Is this an instrumental track?",
+                        )
+                    ) {
+                        setError(
+                            "Please provide lyrics or confirm if this is an instrumental track",
+                        );
+                        return;
+                    }
                 }
             }
 
@@ -274,22 +232,27 @@
             const publishToken = `${challenge.prefix}:${nonce}`;
 
             // Submit lyrics through our API endpoint
+            const payload: Record<string, unknown> = {
+                trackName: formData.trackName.trim(),
+                artistName: formData.artistName.trim(),
+                albumName: formData.albumName?.trim() || "",
+                duration: formData.duration
+                    ? Number.parseInt(formData.duration, 10)
+                    : undefined,
+            };
+            if (activeFormat === "lyricsfile") {
+                payload.lyricsfile = formData.lyricsfile.trim();
+            } else {
+                payload.plainLyrics = formData.plainLyrics?.trim() || "";
+                payload.syncedLyrics = formData.syncedLyrics?.trim() || "";
+            }
             const response = await fetch("/api/publish", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     "X-Publish-Token": publishToken,
                 },
-                body: JSON.stringify({
-                    trackName: formData.trackName.trim(),
-                    artistName: formData.artistName.trim(),
-                    albumName: formData.albumName?.trim() || "",
-                    duration: formData.duration
-                        ? Number.parseInt(formData.duration, 10)
-                        : undefined,
-                    plainLyrics: formData.plainLyrics?.trim() || "",
-                    syncedLyrics: formData.syncedLyrics?.trim() || "",
-                }),
+                body: JSON.stringify(payload),
             });
 
             if (!response.ok) {
@@ -359,7 +322,7 @@
                 LRCLIBpub
             </h1>
             <a
-                href="/search"
+                href={resolve("/search")}
                 class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
             >
                 <svg
@@ -576,114 +539,46 @@
                     />
                 </div>
 
-                <!-- Lyrics input section -->
-                <div
-                    class="space-y-4 p-4 border border-dashed border-indigo-300 rounded-lg bg-indigo-50/50"
-                >
-                    <div class="flex items-center gap-4 flex-wrap">
-                        <h3 class="text-lg font-semibold">Lyrics Input</h3>
-                        <!-- LRC file upload -->
-                        <label
-                            for="lrcFile"
-                            class="flex items-center gap-2 px-3 py-1.5 text-sm bg-indigo-200/75 hover:bg-indigo-200 text-indigo-700 rounded-md cursor-pointer transition-colors"
-                        >
-                            <svg
-                                class="w-4 h-4"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                            >
-                                <path
-                                    d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
-                                />
-                                <polyline points="17 8 12 3 7 8" />
-                                <line x1="12" y1="3" x2="12" y2="15" />
-                            </svg>
-                            Upload .lrc file
-                        </label>
-                        <input
-                            type="file"
-                            id="lrcFile"
-                            accept=".lrc"
-                            class="hidden"
-                            onchange={async (e) => {
-                                const file = (e.target as HTMLInputElement)
-                                    ?.files?.[0];
-                                if (!file) return;
+                <!-- Format tabs -->
+                <div class="flex gap-2">
+                    <button
+                        type="button"
+                        onclick={() => (activeFormat = "lrc")}
+                        class="px-4 py-2 rounded-md text-sm font-medium border {activeFormat === 'lrc'
+                            ? 'bg-indigo-600 text-white border-indigo-600'
+                            : 'bg-white text-indigo-700 border-indigo-200 hover:bg-indigo-50'}"
+                    >
+                        LRC
+                    </button>
+                    <button
+                        type="button"
+                        onclick={() => (activeFormat = "lyricsfile")}
+                        class="px-4 py-2 rounded-md text-sm font-medium border {activeFormat === 'lyricsfile'
+                            ? 'bg-indigo-600 text-white border-indigo-600'
+                            : 'bg-white text-indigo-700 border-indigo-200 hover:bg-indigo-50'}"
+                    >
+                        Lyricsfile (YAML)
+                    </button>
+                </div>
 
-                                const content = await file.text();
-                                const parsed = parseLRCFile(content);
-
-                                if (parsed.title)
-                                    formData.trackName = parsed.title;
-                                if (parsed.artist)
-                                    formData.artistName = parsed.artist;
-                                if (parsed.album)
-                                    formData.albumName = parsed.album;
-                                if (parsed.duration)
-                                    formData.duration = parsed.duration;
-                                formData.plainLyrics = parsed.plainLyrics;
-                                formData.syncedLyrics = parsed.syncedLyrics;
-
-                                // Run validation after loading file
-                                validationDismissed = false;
-                                runValidation();
-                            }}
+                <!-- Lyrics input — tab content -->
+                <div class="p-4 border border-dashed border-indigo-300 rounded-lg bg-indigo-50/50">
+                    {#if activeFormat === "lrc"}
+                        <LrcTab
+                            bind:plainLyrics={formData.plainLyrics}
+                            bind:syncedLyrics={formData.syncedLyrics}
+                            bind:trackName={formData.trackName}
+                            bind:artistName={formData.artistName}
+                            bind:albumName={formData.albumName}
+                            bind:duration={formData.duration}
                         />
-                    </div>
-
-                    <!-- Plain lyrics input -->
-                    <div>
-                        <label
-                            for="plainLyrics"
-                            class="block text-sm font-medium mb-1"
-                            >Plain Lyrics</label
-                        >
-                        <textarea
-                            id="plainLyrics"
-                            bind:value={formData.plainLyrics}
-                            rows="6"
-                            placeholder="Enter plain lyrics text here"
-                            class="w-full px-3 py-2 border border-indigo-200 rounded-md focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
-                        ></textarea>
-                        <p class="mt-1 text-sm text-indigo-600">
-                            Leave both lyrics fields empty for instrumental
-                            tracks
-                        </p>
-                    </div>
-
-                    <!-- Synced lyrics input -->
-                    <div>
-                        <label
-                            for="syncedLyrics"
-                            class="block text-sm font-medium mb-1"
-                            >Synced Lyrics</label
-                        >
-                        <div class="relative">
-                            <textarea
-                                id="syncedLyrics"
-                                bind:value={formData.syncedLyrics}
-                                oninput={() => {
-                                    validationDismissed = false;
-                                    runValidation();
-                                }}
-                                rows="6"
-                                class="w-full px-3 py-2 border border-indigo-200 rounded-md focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
-                                placeholder="[mm:ss.xx] Lyrics line"
-                            ></textarea>
-                        </div>
-                    </div>
-
-                    <!-- Validation Warning -->
-                    {#if showValidationWarning && validationResult}
-                        <ValidationWarning
-                            {validationResult}
-                            onNormalize={handleNormalize}
-                            onStripELRC={handleStripELRC}
-                            onDismiss={dismissValidation}
+                    {:else}
+                        <LyricsfileTab
+                            bind:lyricsfile={formData.lyricsfile}
+                            bind:trackName={formData.trackName}
+                            bind:artistName={formData.artistName}
+                            bind:albumName={formData.albumName}
+                            bind:duration={formData.duration}
                         />
                     {/if}
                 </div>

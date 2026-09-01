@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { resolve } from "$app/paths";
     import Footer from "$lib/components/Footer.svelte";
     import {
         ClockIcon,
@@ -34,7 +35,7 @@
     let viewingLyrics = $state<LyricResult | null>(null);
     let wasAutoSwitched = $state(false);
     let copiedStates = $state<{ [key: string]: boolean }>({});
-    let activeTab = $state<"synced" | "plain">("synced");
+    let activeTab = $state<"synced" | "plain" | "lyricsfile">("synced");
 
     // Timeouts for notifications
     let errorTimeout: number;
@@ -68,8 +69,9 @@
      */
     function viewLyrics(result: LyricResult) {
         viewingLyrics = result;
-        // Set default tab based on available lyrics
-        if (result.syncedLyrics) {
+        if (result.lyricsfile) {
+            activeTab = "lyricsfile";
+        } else if (result.syncedLyrics) {
             activeTab = "synced";
         } else if (result.plainLyrics) {
             activeTab = "plain";
@@ -209,6 +211,13 @@
         setSuccess(`Downloaded ${filename}`);
     }
 
+    function downloadLyricsfile(result: LyricResult) {
+        if (!result.lyricsfile) return;
+        const filename = `${sanitizeFilename(result.artistName)} - ${sanitizeFilename(result.trackName)}.lrcf`;
+        downloadFile(result.lyricsfile, filename, "text/yaml");
+        setSuccess(`Downloaded ${filename}`);
+    }
+
     // Reactive logic to auto-switch search mode
     $effect(() => {
         // Only auto-switch if user is in general mode and adds specific search criteria
@@ -301,7 +310,7 @@
                 Search Lyrics
             </h1>
             <a
-                href="/"
+                href={resolve("/")}
                 class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
             >
                 <svg
@@ -558,7 +567,7 @@
                     </div>
                 {:else}
                     <div class="divide-y divide-indigo-100">
-                        {#each results as result}
+                        {#each results as result (result.id)}
                             <div
                                 class="p-6 hover:bg-indigo-50/50 transition-colors"
                             >
@@ -591,36 +600,45 @@
                                                 )}</span
                                             >
                                             <div
-                                                class="flex items-center gap-2"
+                                                class="flex items-center gap-2 flex-wrap"
                                             >
                                                 {#if result.instrumental}
                                                     <span
                                                         class="px-2 py-1 bg-orange-100 text-orange-700 rounded-md text-xs"
                                                         >Instrumental</span
                                                     >
-                                                {:else if result.syncedLyrics}
-                                                    <span
-                                                        class="px-2 py-1 bg-blue-100 text-blue-700 rounded-md text-xs flex items-center gap-1"
-                                                    >
-                                                        <ClockIcon
-                                                            size="size-3"
-                                                        />
-                                                        Synced
-                                                    </span>
-                                                {:else if result.plainLyrics}
-                                                    <span
-                                                        class="px-2 py-1 bg-purple-100 text-purple-700 rounded-md text-xs flex items-center gap-1"
-                                                    >
-                                                        <DocumentIcon
-                                                            size="size-3"
-                                                        />
-                                                        Plain
-                                                    </span>
+                                                {:else}
+                                                    {#if result.lyricsfile}
+                                                        <span
+                                                            class="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-md text-xs flex items-center gap-1"
+                                                            >Lyricsfile</span
+                                                        >
+                                                    {/if}
+                                                    {#if result.syncedLyrics}
+                                                        <span
+                                                            class="px-2 py-1 bg-blue-100 text-blue-700 rounded-md text-xs flex items-center gap-1"
+                                                        >
+                                                            <ClockIcon
+                                                                size="size-3"
+                                                            />
+                                                            Synced
+                                                        </span>
+                                                    {/if}
+                                                    {#if result.plainLyrics && !result.syncedLyrics}
+                                                        <span
+                                                            class="px-2 py-1 bg-purple-100 text-purple-700 rounded-md text-xs flex items-center gap-1"
+                                                        >
+                                                            <DocumentIcon
+                                                                size="size-3"
+                                                            />
+                                                            Plain
+                                                        </span>
+                                                    {/if}
                                                 {/if}
                                             </div>
                                         </div>
                                     </div>
-                                    {#if !result.instrumental && (result.plainLyrics || result.syncedLyrics)}
+                                    {#if !result.instrumental && (result.plainLyrics || result.syncedLyrics || result.lyricsfile)}
                                         <button
                                             onclick={() => viewLyrics(result)}
                                             class="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-colors cursor-pointer"
@@ -738,65 +756,84 @@
                 </button>
             </div>
 
-            <!-- Tabs -->
-            {#if viewingLyrics.syncedLyrics && viewingLyrics.plainLyrics}
+            <!-- Tabs (shown when 2+ lyric types available) -->
+            {#if (viewingLyrics.lyricsfile ? 1 : 0) + (viewingLyrics.syncedLyrics ? 1 : 0) + (viewingLyrics.plainLyrics ? 1 : 0) > 1}
                 <div class="flex border-b border-indigo-200 bg-white">
-                    <button
-                        onclick={() => (activeTab = "synced")}
-                        class="flex-1 px-6 py-3 text-sm font-medium transition-colors border-b-2 cursor-pointer {activeTab ===
-                        'synced'
-                            ? 'text-indigo-600 border-indigo-600 bg-indigo-50'
-                            : 'text-indigo-700 border-transparent hover:text-indigo-600 hover:bg-indigo-50'}"
-                    >
-                        <div class="flex items-center justify-center gap-2">
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke-width="1.5"
-                                stroke="currentColor"
-                                class="size-4"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                                />
-                            </svg>
-                            Synced Lyrics
-                        </div>
-                    </button>
-                    <button
-                        onclick={() => (activeTab = "plain")}
-                        class="flex-1 px-6 py-3 text-sm font-medium transition-colors border-b-2 cursor-pointer {activeTab ===
-                        'plain'
-                            ? 'text-indigo-600 border-indigo-600 bg-indigo-50'
-                            : 'text-indigo-700 border-transparent hover:text-indigo-600 hover:bg-indigo-50'}"
-                    >
-                        <div class="flex items-center justify-center gap-2">
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke-width="1.5"
-                                stroke="currentColor"
-                                class="size-4"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0-1.125.504-1.125 1.125V11.25a9 9 0 0 0-9-9Z"
-                                />
-                            </svg>
-                            Plain Lyrics
-                        </div>
-                    </button>
+                    {#if viewingLyrics.lyricsfile}
+                        <button
+                            onclick={() => (activeTab = "lyricsfile")}
+                            class="flex-1 px-4 py-3 text-sm font-medium transition-colors border-b-2 cursor-pointer {activeTab ===
+                            'lyricsfile'
+                                ? 'text-indigo-600 border-indigo-600 bg-indigo-50'
+                                : 'text-indigo-700 border-transparent hover:text-indigo-600 hover:bg-indigo-50'}"
+                        >
+                            <div class="flex items-center justify-center gap-2">
+                                <DocumentIcon size="size-4" />
+                                Lyricsfile
+                            </div>
+                        </button>
+                    {/if}
+                    {#if viewingLyrics.syncedLyrics}
+                        <button
+                            onclick={() => (activeTab = "synced")}
+                            class="flex-1 px-4 py-3 text-sm font-medium transition-colors border-b-2 cursor-pointer {activeTab ===
+                            'synced'
+                                ? 'text-indigo-600 border-indigo-600 bg-indigo-50'
+                                : 'text-indigo-700 border-transparent hover:text-indigo-600 hover:bg-indigo-50'}"
+                        >
+                            <div class="flex items-center justify-center gap-2">
+                                <ClockIcon size="size-4" />
+                                Synced
+                            </div>
+                        </button>
+                    {/if}
+                    {#if viewingLyrics.plainLyrics}
+                        <button
+                            onclick={() => (activeTab = "plain")}
+                            class="flex-1 px-4 py-3 text-sm font-medium transition-colors border-b-2 cursor-pointer {activeTab ===
+                            'plain'
+                                ? 'text-indigo-600 border-indigo-600 bg-indigo-50'
+                                : 'text-indigo-700 border-transparent hover:text-indigo-600 hover:bg-indigo-50'}"
+                        >
+                            <div class="flex items-center justify-center gap-2">
+                                <DocumentIcon size="size-4" />
+                                Plain
+                            </div>
+                        </button>
+                    {/if}
                 </div>
             {/if}
 
             <!-- Modal Content -->
             <div class="p-6 overflow-y-auto flex-1">
-                {#if activeTab === "synced" && viewingLyrics.syncedLyrics}
+                {#if activeTab === "lyricsfile" && viewingLyrics.lyricsfile}
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-indigo-900 flex items-center gap-2">
+                                <DocumentIcon size="size-5" />
+                                Lyricsfile (YAML)
+                            </h3>
+                            <div class="flex gap-2">
+                                <button
+                                    onclick={() => copyToClipboard(viewingLyrics!.lyricsfile!, "Lyricsfile", `lyricsfile-${viewingLyrics!.id}`)}
+                                    class="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-colors cursor-pointer"
+                                >
+                                    <CopyIcon />
+                                    {copiedStates[`lyricsfile-${viewingLyrics!.id}`] ? "Copied" : "Copy"}
+                                </button>
+                                <button
+                                    onclick={() => downloadLyricsfile(viewingLyrics!)}
+                                    class="flex items-center gap-2 px-3 py-1.5 border border-indigo-600 text-indigo-600 bg-transparent rounded-md hover:bg-indigo-50 transition-colors cursor-pointer"
+                                    title="Download lyricsfile YAML"
+                                >
+                                    <DownloadIcon />
+                                    Download
+                                </button>
+                            </div>
+                        </div>
+                        <pre class="bg-indigo-50 p-4 rounded-lg border border-indigo-200 text-sm overflow-x-auto whitespace-pre-wrap text-indigo-900">{viewingLyrics.lyricsfile}</pre>
+                    </div>
+                {:else if activeTab === "synced" && viewingLyrics.syncedLyrics}
                     <div>
                         <div class="flex items-center justify-between mb-4">
                             <h3
@@ -950,46 +987,27 @@
                         <pre
                             class="bg-indigo-50 p-4 rounded-lg border border-indigo-200 text-sm whitespace-pre-wrap text-indigo-900">{viewingLyrics.plainLyrics}</pre>
                     </div>
-                {:else if viewingLyrics.syncedLyrics && !viewingLyrics.plainLyrics}
-                    <!-- Only synced lyrics available -->
+                {:else if viewingLyrics.lyricsfile && !viewingLyrics.syncedLyrics && !viewingLyrics.plainLyrics}
                     <div>
                         <div class="flex items-center justify-between mb-4">
-                            <h3
-                                class="text-lg font-semibold text-indigo-900 flex items-center gap-2"
-                            >
-                                <ClockIcon size="size-5" />
-                                Synced Lyrics (LRC Format)
+                            <h3 class="text-lg font-semibold text-indigo-900 flex items-center gap-2">
+                                <DocumentIcon size="size-5" />
+                                Lyricsfile (YAML)
                             </h3>
                             <div class="flex gap-2">
-                                <button
-                                    onclick={() =>
-                                        copyToClipboard(
-                                            viewingLyrics!.syncedLyrics!,
-                                            "Synced lyrics",
-                                            `synced-${viewingLyrics!.id}`,
-                                        )}
-                                    class="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-colors cursor-pointer"
-                                >
+                                <button onclick={() => copyToClipboard(viewingLyrics!.lyricsfile!, "Lyricsfile", `lyricsfile-${viewingLyrics!.id}`)} class="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-colors cursor-pointer">
                                     <CopyIcon />
-                                    {copiedStates[`synced-${viewingLyrics!.id}`]
-                                        ? "Copied"
-                                        : "Copy"}
+                                    {copiedStates[`lyricsfile-${viewingLyrics!.id}`] ? "Copied" : "Copy"}
                                 </button>
-                                <button
-                                    onclick={() => downloadLRC(viewingLyrics!)}
-                                    class="flex items-center gap-2 px-3 py-1.5 border border-indigo-600 text-indigo-600 bg-transparent rounded-md hover:bg-indigo-50 transition-colors cursor-pointer"
-                                    title="Download as LRC file"
-                                    aria-label="Download lyrics as LRC file"
-                                >
+                                <button onclick={() => downloadLyricsfile(viewingLyrics!)} class="flex items-center gap-2 px-3 py-1.5 border border-indigo-600 text-indigo-600 bg-transparent rounded-md hover:bg-indigo-50 transition-colors cursor-pointer" title="Download lyricsfile YAML">
                                     <DownloadIcon />
                                     Download
                                 </button>
                             </div>
                         </div>
-                        <pre
-                            class="bg-indigo-50 p-4 rounded-lg border border-indigo-200 text-sm overflow-x-auto whitespace-pre-wrap text-indigo-900">{viewingLyrics.syncedLyrics}</pre>
+                        <pre class="bg-indigo-50 p-4 rounded-lg border border-indigo-200 text-sm overflow-x-auto whitespace-pre-wrap text-indigo-900">{viewingLyrics.lyricsfile}</pre>
                     </div>
-                {:else if viewingLyrics.plainLyrics && !viewingLyrics.syncedLyrics}
+                {:else if viewingLyrics.plainLyrics && !viewingLyrics.syncedLyrics && !viewingLyrics.lyricsfile}
                     <!-- Only plain lyrics available -->
                     <div>
                         <div class="flex items-center justify-between mb-4">

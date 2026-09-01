@@ -1,4 +1,5 @@
 import { validateLRC } from "$lib/lrc/validator";
+import { validateLyricsfileYaml } from "$lib/lyricsfile/validator";
 import { USER_AGENT } from "$lib/types";
 import { json } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
@@ -31,14 +32,8 @@ export const POST: RequestHandler = async ({ request }) => {
     );
   }
 
-  const {
-    trackName,
-    artistName,
-    albumName,
-    duration,
-    plainLyrics,
-    syncedLyrics,
-  } = body;
+  const { trackName, artistName, albumName, duration, plainLyrics, syncedLyrics, lyricsfile } =
+    body;
 
   // Validate required fields
   if (!trackName?.trim()) {
@@ -62,8 +57,27 @@ export const POST: RequestHandler = async ({ request }) => {
     );
   }
 
-  // Validate synced lyrics format if provided
-  if (syncedLyrics?.trim()) {
+  const hasLyricsfile = typeof lyricsfile === "string" && lyricsfile.trim().length > 0;
+
+  // Validate lyricsfile if provided (takes precedence)
+  if (hasLyricsfile) {
+    const lfValidation = validateLyricsfileYaml(lyricsfile.trim());
+    if (lfValidation.hasErrors) {
+      const errorMessages = lfValidation.issues
+        .filter((i) => i.severity === "error")
+        .map((i) => `${i.path}: ${i.message}`)
+        .join("; ");
+      return json(
+        {
+          message: `Lyricsfile validation failed: ${errorMessages}`,
+          name: "ValidationError",
+          statusCode: 400,
+          validationIssues: lfValidation.issues,
+        },
+        { status: 400 },
+      );
+    }
+  } else if (syncedLyrics?.trim()) {
     const validation = validateLRC(syncedLyrics.trim());
     if (validation.hasErrors) {
       const errorMessages = validation.issues
@@ -95,11 +109,15 @@ export const POST: RequestHandler = async ({ request }) => {
   if (duration && Number.isInteger(duration) && duration > 0) {
     lrclibBody.duration = duration;
   }
-  if (plainLyrics?.trim()) {
-    lrclibBody.plainLyrics = plainLyrics.trim();
-  }
-  if (syncedLyrics?.trim()) {
-    lrclibBody.syncedLyrics = syncedLyrics.trim();
+  if (hasLyricsfile) {
+    lrclibBody.lyricsfile = lyricsfile.trim();
+  } else {
+    if (plainLyrics?.trim()) {
+      lrclibBody.plainLyrics = plainLyrics.trim();
+    }
+    if (syncedLyrics?.trim()) {
+      lrclibBody.syncedLyrics = syncedLyrics.trim();
+    }
   }
 
   try {
@@ -116,9 +134,7 @@ export const POST: RequestHandler = async ({ request }) => {
     let data;
     try {
       const responseText = await response.text();
-      data = responseText
-        ? JSON.parse(responseText)
-        : { message: "No response content" };
+      data = responseText ? JSON.parse(responseText) : { message: "No response content" };
     } catch (parseError) {
       data = { message: "Failed to parse response" };
     }

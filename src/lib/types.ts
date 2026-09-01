@@ -5,6 +5,7 @@ export interface FormData {
   duration: string;
   plainLyrics: string;
   syncedLyrics: string;
+  lyricsfile: string;
 }
 
 export interface Challenge {
@@ -35,8 +36,8 @@ export interface LyricResult {
   duration?: number;
   plainLyrics?: string;
   syncedLyrics?: string;
+  lyricsfile?: string | null;
   instrumental: boolean;
 }
 
-export const USER_AGENT =
-  "LRCLIBpub v1.0.0 (https://github.com/amrkmn/lrclibpub)";
+export const USER_AGENT = "LRCLIBpub v1.0.0 (https://github.com/amrkmn/lrclibpub)";
