@@ -1,15 +1,10 @@
 import { defineConfig } from "vite";
 import { sveltekit } from "@sveltejs/kit/vite";
-import wasm from "vite-plugin-wasm";
 import devtoolsJson from "vite-plugin-devtools-json";
 import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
-  plugins: [sveltekit(), wasm(), devtoolsJson(), tailwindcss()],
-  worker: {
-    format: "es",
-    plugins: () => [wasm()],
-  },
+  plugins: [sveltekit(), devtoolsJson(), tailwindcss()],
   optimizeDeps: {
     exclude: ["@sveltejs/kit"],
   },

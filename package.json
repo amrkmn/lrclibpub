@@ -7,11 +7,11 @@
     "dev": "vite dev",
     "build": "vite build",
     "build:new": "rm -r .svelte-kit/cloudflare && vite build",
-    "build:wasm": "bun scripts/build-wasm.mjs",
+    "build:wasm": "node scripts/build-wasm.mjs",
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-    "deploy": "bun run build && wrangler deploy",
+    "deploy": "nub run build && wrangler deploy",
     "cf:dev": "wrangler dev .svelte-kit/cloudflare/_worker.js --compatibility-date=2024-09-23"
   },
   "trustedDependencies": [
@@ -34,7 +34,16 @@
     "typescript": "^5.9.3",
     "vite": "^6.4.3",
     "vite-plugin-devtools-json": "^1.1.0",
-    "vite-plugin-wasm": "^3.6.0",
     "wrangler": "^4.115.0"
+  },
+  "dependencies": {
+    "yaml": "^2.9.0"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "nub",
+      "version": "^0.8.1",
+      "onFail": "ignore"
+    }
   }
 }
