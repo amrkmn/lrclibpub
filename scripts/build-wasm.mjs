@@ -1,9 +1,12 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 
-import { $ } from "bun";
-import { copyFileSync, existsSync, mkdirSync } from "fs";
-import { dirname, join } from "path";
-import { fileURLToPath } from "url";
+import { execFile } from "node:child_process";
+import { copyFileSync, existsSync, mkdirSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { promisify } from "node:util";
+import { fileURLToPath } from "node:url";
+
+const execFileAsync = promisify(execFile);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -16,8 +19,8 @@ try {
 
   // Verify Zig is installed
   try {
-    const version = await $`zig version`.text();
-    console.log(`ℹ️  Zig version: ${version.trim()}`);
+    const { stdout } = await execFileAsync("zig", ["version"]);
+    console.log(`ℹ️  Zig version: ${stdout.trim()}`);
   } catch (error) {
     throw new Error(
       "Zig is not installed or not in PATH. Please install Zig from https://ziglang.org/",
@@ -31,11 +34,10 @@ try {
   }
 
   console.log(`📁 Working directory: ${solverDir}`);
-  process.chdir(solverDir);
 
   // Run zig build
   console.log("⚡ Running zig build...");
-  await $`zig build`;
+  await execFileAsync("zig", ["build"], { cwd: solverDir });
 
   // Copy the built WASM file
   const srcPath = join(solverDir, "zig-out", "bin", "solver.wasm");

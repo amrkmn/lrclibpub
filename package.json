@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
-    "build:new": "rm -r .svelte-kit/cloudflare && vite build",
+    "build:fresh": "rm -r .svelte-kit/cloudflare && vite build",
     "build:wasm": "node scripts/build-wasm.mjs",
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
@@ -14,20 +14,11 @@
     "deploy": "nub run build && wrangler deploy",
     "cf:dev": "wrangler dev .svelte-kit/cloudflare/_worker.js --compatibility-date=2024-09-23"
   },
-  "trustedDependencies": [
-    "@swc/core",
-    "@tailwindcss/oxide",
-    "esbuild",
-    "sharp",
-    "workerd"
-  ],
   "devDependencies": {
     "@sveltejs/adapter-cloudflare": "^7.2.9",
     "@sveltejs/kit": "^2.70.2",
     "@sveltejs/vite-plugin-svelte": "^5.1.1",
     "@tailwindcss/vite": "^4.3.3",
-    "@types/bun": "^1.3.14",
-    "numify": "^1.1.2",
     "svelte": "^5.56.8",
     "svelte-check": "^4.7.4",
     "tailwindcss": "^4.3.3",
@@ -37,6 +28,7 @@
     "wrangler": "^4.115.0"
   },
   "dependencies": {
+    "numify": "^1.1.2",
     "yaml": "^2.9.0"
   },
   "devEngines": {
