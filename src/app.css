@@ -26,6 +26,10 @@
 }
 
 @layer base {
+    html {
+        scrollbar-gutter: stable both-edges;
+    }
+
     body {
         @apply bg-indigo-50;
         font-family:
