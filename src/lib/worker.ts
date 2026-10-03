@@ -2,6 +2,11 @@
 // Out: { type: "progress", attempts, rate }, { type: "success", nonce, totalTime, attempts },
 // or { type: "error", error }. The u64-max sentinel reads back as signed
 // i64, so any negative BigInt means failure; nonce 0 is valid.
+//
+// Cancellation: none in-protocol — the solve loop is synchronous, so there is
+// no cooperative-cancel hook. Cancel is pool-side worker.terminate().
+// Workers are single-use (one job per instance); the jobId tag is a stale-job
+// guard only — the pool drops messages whose jobId !== active job.
 
 // Fixed offsets: inputs are tiny, so no allocator is needed.
 const PREFIX_OFFSET = 0;

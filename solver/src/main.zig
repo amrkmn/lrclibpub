@@ -1,7 +1,7 @@
 const std = @import("std");
 const sha2 = std.crypto.hash.sha2;
 
-/// Error return: invalid input, overlong prefix, u64 wrap, or cancellation.
+/// Error return: invalid input, overlong prefix, or u64 wrap.
 /// Never a valid solution (nonce 0 is valid).
 pub const ERROR_SENTINEL: u64 = std.math.maxInt(u64);
 
@@ -13,13 +13,6 @@ const PROGRESS_INTERVAL: u32 = 10_000;
 
 // JS progress callback, at most every PROGRESS_INTERVAL hashes.
 extern "env" fn print(value: f64) void;
-
-// Set by requestCancel() (reset on entry); checked once per hash.
-var cancelled: bool = false;
-
-export fn requestCancel() void {
-    cancelled = true;
-}
 
 // Decimal rendering of value into buf (capacity >= 20); returns length.
 fn writeNonceDecimal(buf: []u8, value: u64) usize {
@@ -76,7 +69,7 @@ fn hexToBytes(out: []u8, hex_str: []const u8) !void {
 
 // Find nonce N in start_nonce, start_nonce + stride, ... with
 // SHA256(prefix ++ decimal(N)) < target. Returns the nonce, or
-// ERROR_SENTINEL on invalid input, overflow, or cancellation.
+// ERROR_SENTINEL on invalid input or overflow.
 export fn solveChallenge(
     prefix_ptr: [*]const u8,
     prefix_len: u32,
@@ -85,8 +78,6 @@ export fn solveChallenge(
     start_nonce: u64,
     stride: u64,
 ) u64 {
-    cancelled = false;
-
     const step: u64 = if (stride == 0) 1 else stride;
 
     if (prefix_len > MAX_PREFIX_LEN) return ERROR_SENTINEL;
@@ -113,8 +104,6 @@ export fn solveChallenge(
     var progress_counter: u32 = PROGRESS_INTERVAL;
 
     while (true) {
-        if (cancelled) return ERROR_SENTINEL;
-
         const input = input_buffer[0 .. prefix_len_usize + nonce_len];
 
         // Fresh context per hash; cloning a pre-fed one costs more here.

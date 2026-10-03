@@ -8,7 +8,7 @@ const { instance } = await WebAssembly.instantiate(wasmBytes, {
     env: { print: () => {} }
 });
 
-const { solveChallenge, requestCancel, memory } = instance.exports;
+const { solveChallenge, memory } = instance.exports;
 
 function solve(prefix, targetHex, start = 0n, stride = 1n) {
     const mem = new Uint8Array(memory.buffer);
@@ -102,13 +102,6 @@ check('45B prefix => sentinel', r === -1n, `got ${r}`);
 r = solve('a'.repeat(44), 'ff'.repeat(32));
 
 check('44B prefix => nonce 0', r === 0n, `got ${r}`);
-
-// Cancel flag resets on entry, so an uninterrupted solve still completes.
-requestCancel();
-
-r = solve('test', 'ff'.repeat(32));
-
-check('cancel resets on entry', r === 0n, `got ${r}`);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 
