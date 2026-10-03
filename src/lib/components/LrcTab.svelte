@@ -21,7 +21,9 @@
     } = $props();
 
     let validationResult = $state<LRCValidationResult | null>(null);
+
     let showValidationWarning = $state(false);
+
     let validationDismissed = $state(false);
 
     function runValidation() {
@@ -29,8 +31,10 @@
             validationResult = null;
             showValidationWarning = false;
             validationDismissed = false;
+
             return;
         }
+
         validationResult = validateSyncedLyrics(syncedLyrics);
         showValidationWarning = !validationResult.isValid && !validationDismissed;
     }
@@ -57,12 +61,17 @@
     async function onFileChange(e: Event) {
         // SAFETY: onFileChange bound to <input type=file>, target is HTMLInputElement
         const file = (e.target as HTMLInputElement)?.files?.[0];
+
         if (!file) return;
         const content = await file.text();
         const parsed = parseLRCFile(content);
+
         if (parsed.title) trackName = parsed.title;
+
         if (parsed.artist) artistName = parsed.artist;
+
         if (parsed.album) albumName = parsed.album;
+
         if (parsed.duration) duration = parsed.duration;
         plainLyrics = parsed.plainLyrics;
         syncedLyrics = parsed.syncedLyrics;

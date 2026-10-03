@@ -10,6 +10,7 @@ import { fileURLToPath } from "node:url";
 const execFileAsync = promisify(execFile);
 
 const __filename = fileURLToPath(import.meta.url);
+
 const __dirname = dirname(__filename);
 
 try {
@@ -30,6 +31,7 @@ try {
 
   // Change to solver directory and build
   const solverDir = join(projectRoot, "solver");
+
   if (!existsSync(solverDir)) {
     throw new Error(`Solver source directory not found: ${solverDir}`);
   }

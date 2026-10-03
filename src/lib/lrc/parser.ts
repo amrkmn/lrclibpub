@@ -19,6 +19,7 @@ export function parseLRCFile(content: string): ParsedLRC {
 
   lines.forEach((line) => {
     line = line.replace(/\r$/, "").trim();
+
     if (!line) return;
 
     // Parse length. The fractional part is optional: both [length:02:07]
@@ -26,24 +27,30 @@ export function parseLRCFile(content: string): ParsedLRC {
     const lengthMatch = line.match(
       /^\[length:\s*(\d{1,3}):(\d{1,2})(?:\.(\d{1,3}))?\]$/,
     );
+
     if (lengthMatch) {
       const [, minutes, seconds] = lengthMatch;
       duration = (parseInt(minutes) * 60 + parseInt(seconds)).toString();
+
       return;
     }
 
     // Parse metadata
     const metaMatch = line.match(/^\[(ti|ar|al):\s*(.+?)\]$/i);
+
     if (metaMatch) {
       const [, key, value] = metaMatch;
       metadata[key.toLowerCase()] = value.trim();
+
       return;
     }
 
     // Parse timed lyrics and convert to 2-digit ms format
     const timeMatch = line.match(/^\[(\d{2}):(\d{2})\.(\d{2,3})\](.*?)$/);
+
     if (timeMatch) {
       const [, minutes, seconds, milliseconds, lyrics] = timeMatch;
+
       // Convert milliseconds to 2 digits
       const ms =
         milliseconds.length === 3
@@ -56,6 +63,7 @@ export function parseLRCFile(content: string): ParsedLRC {
         parseInt(minutes) * 60 +
         parseInt(seconds) +
         parseInt(milliseconds) / (milliseconds.length === 3 ? 1000 : 100);
+
       if (stamp > lastTimestampSec) lastTimestampSec = stamp;
 
       syncedLines.push(`[${minutes}:${seconds}.${ms}]${lyrics}`);
@@ -95,9 +103,11 @@ export function generateLRCContent(result: {
   // Add metadata
   lines.push(`[ti:${result.trackName}]`);
   lines.push(`[ar:${result.artistName}]`);
+
   if (result.albumName) {
     lines.push(`[al:${result.albumName}]`);
   }
+
   if (result.duration) {
     const minutes = Math.floor(result.duration / 60);
     const seconds = Math.floor(result.duration % 60);

@@ -23,6 +23,7 @@ let lastProgressTime = 0;
 // (nonce - start) / stride == hashes tried. Rate math must use hashes,
 // not raw nonce deltas (which overstate throughput by stride-x).
 let jobStartNonce = 0;
+
 let jobStride = 1;
 
 let wasmPromise: Promise<WebAssembly.Instance> | null = null;
@@ -31,6 +32,7 @@ async function getInstance(): Promise<WebAssembly.Instance> {
   if (!wasmPromise) {
     wasmPromise = (async () => {
       const url = new URL("./wasm/solver.wasm", import.meta.url);
+
       const importObject: WebAssembly.Imports = {
         env: {
           // Zig calls this at most once per 10k hashes with the absolute
@@ -38,6 +40,7 @@ async function getInstance(): Promise<WebAssembly.Instance> {
           print: (value: number) => {
             const now = Date.now();
             const elapsed = (now - lastProgressTime) / 1000;
+
             if (elapsed >= 0.3) {
               const hashes = (value - jobStartNonce) / jobStride;
               const delta = hashes - lastReportedHashes;
@@ -63,15 +66,19 @@ async function getInstance(): Promise<WebAssembly.Instance> {
             fetch(url),
             importObject,
           );
+
           return streaming.instance;
         }
       } catch {
         // fall through to buffered path
       }
+
       const bytes = await (await fetch(url)).arrayBuffer();
+
       return (await WebAssembly.instantiate(bytes, importObject)).instance;
     })();
   }
+
   return wasmPromise;
 }
 
@@ -102,6 +109,7 @@ self.onmessage = async (e: MessageEvent) => {
         `Prefix too long (${prefixBytes.length} bytes, max ${MAX_PREFIX_BYTES})`,
       );
     }
+
     if (!TARGET_HEX_RE.test(target)) {
       throw new Error("Invalid target: expected 64 hex characters");
     }

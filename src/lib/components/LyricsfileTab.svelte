@@ -25,11 +25,15 @@
             validation = null;
             showWarning = false;
             dismissed = false;
+
             return;
         }
+
         validation = validateLyricsfileYaml(lyricsfile);
         showWarning = validation.hasErrors || validation.hasWarnings;
+
         if (dismissed) showWarning = false;
+
         // auto-fill metadata if empty
         if (validation.data) {
             const d: any = validation.data;

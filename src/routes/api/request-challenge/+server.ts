@@ -17,10 +17,12 @@ export const POST: RequestHandler = async () => {
         name: "UnknownError",
         statusCode: response.status,
       }));
+
       return json(errorData, { status: response.status });
     }
 
     const challenge = await response.json();
+
     return json(challenge);
   } catch (error) {
     if (error instanceof Error && error.message.includes("fetch")) {
@@ -33,6 +35,7 @@ export const POST: RequestHandler = async () => {
         { status: 503 },
       );
     }
+
     return json(
       {
         message: "Failed to get challenge from LRCLIB",

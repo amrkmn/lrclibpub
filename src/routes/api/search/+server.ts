@@ -20,9 +20,13 @@ export const GET: RequestHandler = async ({ url }) => {
   }
 
   const params = new URLSearchParams();
+
   if (q) params.append("q", q);
+
   if (trackName) params.append("track_name", trackName);
+
   if (artistName) params.append("artist_name", artistName);
+
   if (albumName) params.append("album_name", albumName);
 
   try {
@@ -41,10 +45,12 @@ export const GET: RequestHandler = async ({ url }) => {
         name: "UnknownError",
         statusCode: response.status,
       }));
+
       return json(errorData, { status: response.status });
     }
 
     const data = await response.json();
+
     return json(data);
   } catch (err) {
     if (err instanceof Error && err.message.includes("fetch")) {
@@ -57,6 +63,7 @@ export const GET: RequestHandler = async ({ url }) => {
         { status: 503 },
       );
     }
+
     return json(
       {
         message: "An unexpected error occurred",

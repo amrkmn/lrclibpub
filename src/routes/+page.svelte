@@ -25,8 +25,11 @@
 
     // UI state variables
     let isSubmitting = $state(false);
+
     let error = $state<string | null>(null);
+
     let success = $state(false);
+
     let solveProgress = $state({
         attempts: 0,
         nonce: 0,
@@ -34,11 +37,14 @@
         rate: 0,
         workers: 0,
     });
+
     let solveTime = $state(0);
+
     let solveAttempts = $state(0);
 
     // Timeouts for notifications
     let errorTimeout: number;
+
     let successTimeout: number;
 
     // Active PoW solve (cancelled on unmount to avoid leaking workers).
@@ -50,6 +56,7 @@
      */
     function setError(message: string) {
         error = message;
+
         if (errorTimeout) clearTimeout(errorTimeout);
         errorTimeout = setTimeout(() => {
             error = null;
@@ -61,6 +68,7 @@
      */
     function setSuccess() {
         success = true;
+
         if (successTimeout) clearTimeout(successTimeout);
         successTimeout = setTimeout(() => {
             success = false;
@@ -85,6 +93,7 @@
         } else {
             const minutes = Math.floor(timeMs / 60000);
             const seconds = Math.floor((timeMs % 60000) / 1000);
+
             return `${minutes}m ${seconds}s`;
         }
     }
@@ -102,6 +111,7 @@
                 const errorData = await response
                     .json()
                     .catch(() => ({ message: "Failed to get challenge" }));
+
                 throw new Error(errorData.message || "Failed to get challenge");
             }
 
@@ -127,12 +137,14 @@
         const fileInput = document.getElementById(
             "lrcFile",
         ) as HTMLInputElement;
+
         if (fileInput) {
             fileInput.value = "";
         }
         const lfFileInput = document.getElementById(
             "lfFile",
         ) as HTMLInputElement;
+
         if (lfFileInput) {
             lfFileInput.value = "";
         }
@@ -153,25 +165,32 @@
             // Validate required fields
             if (!formData.trackName.trim()) {
                 setError("Track name is required");
+
                 return;
             }
+
             if (!formData.artistName.trim()) {
                 setError("Artist name is required");
+
                 return;
             }
 
             if (activeFormat === "lyricsfile") {
                 if (!formData.lyricsfile.trim()) {
                     setError("Lyricsfile content is required");
+
                     return;
                 }
+
                 const lfVal = validateLyricsfileYaml(
                     formData.lyricsfile.trim(),
                 );
+
                 if (lfVal.hasErrors) {
                     setError(
                         "Please fix Lyricsfile validation errors before publishing",
                     );
+
                     return;
                 }
             } else {
@@ -187,6 +206,7 @@
                         setError(
                             "Please provide lyrics or confirm if this is an instrumental track",
                         );
+
                         return;
                     }
                 }
@@ -236,12 +256,14 @@
                     ? Number.parseInt(formData.duration, 10)
                     : undefined,
             };
+
             if (activeFormat === "lyricsfile") {
                 payload.lyricsfile = formData.lyricsfile.trim();
             } else {
                 payload.plainLyrics = formData.plainLyrics?.trim() || "";
                 payload.syncedLyrics = formData.syncedLyrics?.trim() || "";
             }
+
             const response = await fetch("/api/publish", {
                 method: "POST",
                 headers: {
@@ -255,6 +277,7 @@
                 const errorData = await response
                     .json()
                     .catch(() => ({ message: "Failed to publish lyrics" }));
+
                 throw new Error(
                     errorData.message || "Failed to publish lyrics",
                 );
@@ -284,8 +307,11 @@
         const durationParam = urlParams.get("duration");
 
         if (titleParam) formData.trackName = decodeURIComponent(titleParam);
+
         if (artistParam) formData.artistName = decodeURIComponent(artistParam);
+
         if (albumParam) formData.albumName = decodeURIComponent(albumParam);
+
         if (durationParam)
             formData.duration = decodeURIComponent(durationParam);
     });

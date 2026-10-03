@@ -19,6 +19,7 @@ export const POST: RequestHandler = async ({ request }) => {
   }
 
   let body;
+
   try {
     body = await request.json();
   } catch {
@@ -46,6 +47,7 @@ export const POST: RequestHandler = async ({ request }) => {
       { status: 400 },
     );
   }
+
   if (!artistName?.trim()) {
     return json(
       {
@@ -62,11 +64,13 @@ export const POST: RequestHandler = async ({ request }) => {
   // Validate lyricsfile if provided (takes precedence)
   if (hasLyricsfile) {
     const lfValidation = validateLyricsfileYaml(lyricsfile.trim());
+
     if (lfValidation.hasErrors) {
       const errorMessages = lfValidation.issues
         .filter((i) => i.severity === "error")
         .map((i) => `${i.path}: ${i.message}`)
         .join("; ");
+
       return json(
         {
           message: `Lyricsfile validation failed: ${errorMessages}`,
@@ -79,11 +83,13 @@ export const POST: RequestHandler = async ({ request }) => {
     }
   } else if (syncedLyrics?.trim()) {
     const validation = validateLRC(syncedLyrics.trim());
+
     if (validation.hasErrors) {
       const errorMessages = validation.issues
         .filter((issue) => issue.severity === "error")
         .map((issue) => `Line ${issue.line}: ${issue.message}`)
         .join("; ");
+
       return json(
         {
           message: `LRC validation failed: ${errorMessages}`,
@@ -106,15 +112,18 @@ export const POST: RequestHandler = async ({ request }) => {
   if (albumName?.trim()) {
     lrclibBody.albumName = albumName.trim();
   }
+
   if (duration && Number.isInteger(duration) && duration > 0) {
     lrclibBody.duration = duration;
   }
+
   if (hasLyricsfile) {
     lrclibBody.lyricsfile = lyricsfile.trim();
   } else {
     if (plainLyrics?.trim()) {
       lrclibBody.plainLyrics = plainLyrics.trim();
     }
+
     if (syncedLyrics?.trim()) {
       lrclibBody.syncedLyrics = syncedLyrics.trim();
     }
@@ -132,6 +141,7 @@ export const POST: RequestHandler = async ({ request }) => {
     });
 
     let data;
+
     try {
       const responseText = await response.text();
       data = responseText ? JSON.parse(responseText) : { message: "No response content" };
@@ -145,6 +155,7 @@ export const POST: RequestHandler = async ({ request }) => {
         name: "UnknownError",
         statusCode: response.status,
       }));
+
       return json(errorData, { status: response.status });
     }
 
@@ -160,6 +171,7 @@ export const POST: RequestHandler = async ({ request }) => {
         { status: 503 },
       );
     }
+
     return json(
       {
         message: "An unexpected error occurred",

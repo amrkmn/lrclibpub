@@ -27,19 +27,30 @@
 
     // UI state
     let isSearching = $state(false);
+
     let error = $state<string | null>(null);
+
     let success = $state<string | null>(null);
+
     let results = $state<LyricResult[]>([]);
+
     let hasSearched = $state(false);
+
     let searchMode = $state<"general" | "specific">("general");
+
     let viewingLyrics = $state<LyricResult | null>(null);
+
     let wasAutoSwitched = $state(false);
+
     let copiedStates = $state<{ [key: string]: boolean }>({});
+
     let activeTab = $state<"synced" | "plain" | "lyricsfile">("synced");
 
     // Timeouts for notifications
     let errorTimeout: number;
+
     let successTimeout: number;
+
     let copyTimeouts: { [key: string]: number } = {};
 
     /**
@@ -47,6 +58,7 @@
      */
     function setError(message: string) {
         error = message;
+
         if (errorTimeout) clearTimeout(errorTimeout);
         errorTimeout = setTimeout(() => {
             error = null;
@@ -58,6 +70,7 @@
      */
     function setSuccess(message: string) {
         success = message;
+
         if (successTimeout) clearTimeout(successTimeout);
         successTimeout = setTimeout(() => {
             success = null;
@@ -69,6 +82,7 @@
      */
     function viewLyrics(result: LyricResult) {
         viewingLyrics = result;
+
         if (result.lyricsfile) {
             activeTab = "lyricsfile";
         } else if (result.syncedLyrics) {
@@ -139,6 +153,7 @@
     async function performSearch() {
         if (!searchParams.q && !searchParams.track_name) {
             setError("Please provide either a search term or track name");
+
             return;
         }
 
@@ -148,11 +163,15 @@
         try {
             // Build query parameters
             const params = new URLSearchParams();
+
             if (searchParams.q) params.append("q", searchParams.q);
+
             if (searchParams.track_name)
                 params.append("track_name", searchParams.track_name);
+
             if (searchParams.artist_name)
                 params.append("artist_name", searchParams.artist_name);
+
             if (searchParams.album_name)
                 params.append("album_name", searchParams.album_name);
 
@@ -164,6 +183,7 @@
                 const errorData = await response
                     .json()
                     .catch(() => ({ message: "Search failed" }));
+
                 throw new Error(
                     errorData.message || `Search failed: ${response.status}`,
                 );
@@ -198,6 +218,7 @@
         if (!duration) return "Unknown";
         const minutes = Math.floor(duration / 60);
         const remainingSeconds = Math.floor(duration % 60);
+
         return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
     }
 
@@ -227,6 +248,7 @@
         ) {
             searchMode = "specific";
             wasAutoSwitched = true;
+
             // When auto-switching to specific, move q to track_name if track_name is empty
             if (!searchParams.track_name && searchParams.q) {
                 searchParams.track_name = searchParams.q;
@@ -241,6 +263,7 @@
             // Auto-switch back to general if all specific criteria are cleared (but only if it was auto-switched)
             searchMode = "general";
             wasAutoSwitched = false;
+
             // When auto-switching back to general, move track_name to q if q is empty
             if (!searchParams.q && searchParams.track_name) {
                 searchParams.q = searchParams.track_name;
@@ -275,12 +298,15 @@
             searchParams.q = decodeURIComponent(qParam);
             searchMode = "general";
         }
+
         if (trackParam) {
             searchParams.track_name = decodeURIComponent(trackParam);
             searchMode = "specific";
         }
+
         if (artistParam)
             searchParams.artist_name = decodeURIComponent(artistParam);
+
         if (albumParam)
             searchParams.album_name = decodeURIComponent(albumParam);
 

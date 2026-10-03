@@ -112,6 +112,7 @@ export function validateLyricsfileYaml(raw: string): LyricsfileValidationResult 
         message: "metadata.album must be a string",
       });
     }
+
     if ("duration_ms" in m && m.duration_ms !== null) {
       if (!isInt(m.duration_ms) || m.duration_ms < 0) {
         issues.push({
@@ -121,6 +122,7 @@ export function validateLyricsfileYaml(raw: string): LyricsfileValidationResult 
         });
       }
     }
+
     if ("offset_ms" in m && m.offset_ms !== null) {
       if (!isInt(m.offset_ms)) {
         issues.push({
@@ -190,6 +192,7 @@ export function validateLyricsfileYaml(raw: string): LyricsfileValidationResult 
               message: "text is required and must be non-empty string",
             });
           }
+
           if (!("start_ms" in line) || !isInt(line.start_ms) || line.start_ms < 0) {
             issues.push({
               path: `${base}.start_ms`,
@@ -197,6 +200,7 @@ export function validateLyricsfileYaml(raw: string): LyricsfileValidationResult 
               message: "start_ms is required and must be integer >= 0",
             });
           }
+
           if ("end_ms" in line && line.end_ms !== null) {
             if (!isInt(line.end_ms) || line.end_ms < 0) {
               issues.push({
@@ -212,6 +216,7 @@ export function validateLyricsfileYaml(raw: string): LyricsfileValidationResult 
               });
             }
           }
+
           if ("words" in line && line.words !== null && line.words !== undefined) {
             if (!Array.isArray(line.words)) {
               issues.push({
@@ -233,6 +238,7 @@ export function validateLyricsfileYaml(raw: string): LyricsfileValidationResult 
                     message: "text is required",
                   });
                 }
+
                 if (!("start_ms" in w) || !isInt(w.start_ms) || w.start_ms < 0) {
                   issues.push({
                     path: `${wp}.start_ms`,
@@ -240,6 +246,7 @@ export function validateLyricsfileYaml(raw: string): LyricsfileValidationResult 
                     message: "start_ms is required and must be integer >= 0",
                   });
                 }
+
                 if ("end_ms" in w && w.end_ms !== null) {
                   if (!isInt(w.end_ms) || w.end_ms < 0) {
                     issues.push({

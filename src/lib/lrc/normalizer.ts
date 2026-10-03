@@ -45,6 +45,7 @@ export function normalizeLRC(content: string): NormalizationResult {
     // Preserve empty lines and metadata
     if (!line || /^\[(ti|ar|al|length|offset):/i.test(line)) {
       normalizedLines.push(line);
+
       return;
     }
 
@@ -60,6 +61,7 @@ export function normalizeLRC(content: string): NormalizationResult {
     // If no timestamps or only one timestamp, keep line as-is
     if (timestamps.length <= 1) {
       normalizedLines.push(line);
+
       return;
     }
 
@@ -69,6 +71,7 @@ export function normalizeLRC(content: string): NormalizationResult {
     // Extract lyrics text (everything after all timestamps)
     const lastTimestamp = timestamps[timestamps.length - 1];
     const lastTimestampIndex = line.lastIndexOf(lastTimestamp);
+
     const lyricsText = line.substring(
       lastTimestampIndex + lastTimestamp.length,
     );
@@ -104,6 +107,7 @@ function extractPlainLyrics(syncedLyrics: string): string {
 
   lines.forEach((line) => {
     const trimmed = line.trim();
+
     if (!trimmed) return;
 
     // Skip metadata
@@ -111,8 +115,10 @@ function extractPlainLyrics(syncedLyrics: string): string {
 
     // Extract lyrics after timestamp
     const match = trimmed.match(/^\[\d{2}:\d{2}\.\d{2,3}\](.*)$/);
+
     if (match) {
       const lyrics = match[1].trim();
+
       if (lyrics) {
         plainLines.push(lyrics);
       }
@@ -128,6 +134,7 @@ function extractPlainLyrics(syncedLyrics: string): string {
  */
 function normalizeTimestamp(timestamp: string): string {
   const match = timestamp.match(/\[(\d{2}):(\d{2})\.(\d{2,3})\]/);
+
   if (!match) return timestamp;
 
   const [, minutes, seconds, milliseconds] = match;
@@ -159,17 +166,21 @@ export function sortLRCLines(content: string): string {
     // Preserve metadata at top
     if (/^\[(ti|ar|al|length|offset):/i.test(trimmed)) {
       metadataLines.push(trimmed);
+
       return;
     }
 
     // Extract timestamp for sorting
     const match = trimmed.match(/^\[(\d{2}):(\d{2})\.(\d{2,3})\]/);
+
     if (match) {
       const [, minutes, seconds, milliseconds] = match;
+
       const timeInMs =
         parseInt(minutes) * 60000 +
         parseInt(seconds) * 1000 +
         parseInt(milliseconds) * 10;
+
       timedLines.push({ timestamp: timeInMs, line: trimmed });
     } else if (trimmed) {
       otherLines.push(trimmed);
@@ -224,18 +235,22 @@ export function stripELRCWordTimestamps(content: string): ELRCStrippingResult {
     // Preserve empty lines and metadata
     if (!line || /^\[(ti|ar|al|length|offset):/i.test(line)) {
       strippedLines.push(line);
+
       return;
     }
 
     // Check if line has ELRC word timestamps
     const elrcPattern = /<\d{1,2}:\d{2}\.\d{2,3}>/g;
+
     if (elrcPattern.test(line)) {
       linesAffected++;
+
       // Remove all ELRC word timestamps and clean up extra whitespace
       const stripped = line
         .replace(/<\d{1,2}:\d{2}\.\d{2,3}>/g, "")
         .replace(/\s+/g, " ")
         .trim();
+
       strippedLines.push(stripped);
     } else {
       strippedLines.push(line);
@@ -248,11 +263,14 @@ export function stripELRCWordTimestamps(content: string): ELRCStrippingResult {
   const plainLines: string[] = [];
   strippedLines.forEach((line) => {
     if (!line) return;
+
     if (/^\[(ti|ar|al|length|offset):/i.test(line)) return;
 
     const match = line.match(/^\[\d{2}:\d{2}\.\d{2,3}\](.*)$/);
+
     if (match) {
       const lyrics = match[1].trim();
+
       if (lyrics) {
         plainLines.push(lyrics);
       }

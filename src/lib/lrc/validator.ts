@@ -62,9 +62,11 @@ const PATTERNS = {
  */
 function parseTimestampToMs(timestamp: string): number | null {
   const match = timestamp.match(/\[(\d{2}):(\d{2})\.(\d{2,3})\]/);
+
   if (!match) return null;
 
   const [, minutes, seconds, milliseconds] = match;
+
   const ms =
     milliseconds.length === 3
       ? Math.round(parseInt(milliseconds) / 10)
@@ -86,10 +88,12 @@ export function validateLRC(content: string): LRCValidationResult {
 
   const timedLines: Array<{ timestamp: number; line: number; raw: string }> =
     [];
+
   const seenTimestamps = new Map<number, number>();
 
   lines.forEach((rawLine, index) => {
     const line = rawLine.trim();
+
     if (!line) return;
 
     // Skip metadata lines
@@ -97,6 +101,7 @@ export function validateLRC(content: string): LRCValidationResult {
 
     // Check for ELRC word-level timestamps
     const elrcMatches = Array.from(line.matchAll(PATTERNS.ELRC_WORD_TIMING));
+
     if (elrcMatches.length > 0) {
       elrcCount++;
       issues.push({
@@ -131,6 +136,7 @@ export function validateLRC(content: string): LRCValidationResult {
         timestamps: timestamps.map((t) => t[0]),
         suggestion: "Use auto-fix to expand into separate lines",
       });
+
       return;
     }
 
@@ -146,6 +152,7 @@ export function validateLRC(content: string): LRCValidationResult {
         raw: line,
         suggestion: "Format should be [mm:ss.xx]",
       });
+
       return;
     }
 
@@ -158,6 +165,7 @@ export function validateLRC(content: string): LRCValidationResult {
         message: "Timestamp cannot be negative",
         raw: line,
       });
+
       return;
     }
 
@@ -212,6 +220,7 @@ export function validateLRC(content: string): LRCValidationResult {
   // Check for excessive gaps (more than 30 seconds)
   for (let i = 1; i < timedLines.length; i++) {
     const gap = timedLines[i].timestamp - timedLines[i - 1].timestamp;
+
     if (gap > 30000) {
       // 30 seconds
       issues.push({
@@ -231,8 +240,10 @@ export function validateLRC(content: string): LRCValidationResult {
       // This is caught by duplicate check, skip
       continue;
     }
+
     // Check if timestamps are too close (less than 100ms)
     const gap = timedLines[i].timestamp - timedLines[i - 1].timestamp;
+
     if (gap > 0 && gap < 100) {
       issues.push({
         line: timedLines[i].line,
@@ -309,8 +320,10 @@ export function validateSyncedLyrics(
  */
 export function hasMultiTimestampIssues(content: string): boolean {
   const lines = content.split("\n");
+
   return lines.some((line) => {
     const timestamps = Array.from(line.matchAll(PATTERNS.ALL_TIMESTAMPS));
+
     return timestamps.length > 1;
   });
 }

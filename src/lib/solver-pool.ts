@@ -47,7 +47,9 @@ export function startSolve(
   // total is a plain sum across workers.
   function totalAttempts() {
     let total = 0;
+
     for (const v of latest.values()) total += Math.max(0, v.attempts);
+
     return Math.floor(total);
   }
 
@@ -76,17 +78,20 @@ export function startSolve(
       const w = new Worker(new URL("./worker.ts", import.meta.url), {
         type: "module",
       });
+
       workers.push(w);
       latest.set(w, { attempts: 0, rate: 0 });
 
       w.onmessage = (e: MessageEvent) => {
         if (settled) return;
         const msg = e.data;
+
         if (msg.jobId !== jobId) return;
 
         if (msg.type === "progress") {
           latest.set(w, { attempts: msg.attempts, rate: msg.rate });
           let rate = 0;
+
           for (const v of latest.values()) rate += v.rate;
           onProgress?.({
             attempts: totalAttempts(),
@@ -103,11 +108,13 @@ export function startSolve(
             attempts: msg.attempts ?? prev?.attempts ?? 0,
             rate: prev?.rate ?? 0,
           });
+
           const result: SolverResult = {
             nonce: msg.nonce,
             attempts: totalAttempts(),
             totalTime: Date.now() - startTime,
           };
+
           cleanup();
           resolve(result);
         } else if (msg.type === "error") {

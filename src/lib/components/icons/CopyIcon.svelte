@@ -1,5 +1,6 @@
 <script lang="ts">
     export let size: string = "size-4";
+
     export let className: string = "";
 </script>
 

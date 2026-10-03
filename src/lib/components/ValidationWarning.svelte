@@ -16,8 +16,11 @@
         $props();
 
     const summary = $derived(getValidationSummary(validationResult));
+
     const showNormalizeButton = $derived(validationResult.hasMultiTimestamps);
+
     const showStripELRCButton = $derived(validationResult.hasELRC);
+
     const hasErrors = $derived(validationResult.hasErrors);
 
     // Group issues by type
@@ -27,8 +30,10 @@
             if (!grouped.has(issue.type)) {
                 grouped.set(issue.type, []);
             }
+
             grouped.get(issue.type)!.push(issue);
         });
+
         return grouped;
     });
 
@@ -40,6 +45,7 @@
         } else {
             expandedTypes.add(type);
         }
+
         expandedTypes = new Set(expandedTypes);
     }
 </script>
