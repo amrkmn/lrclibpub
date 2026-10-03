@@ -23,9 +23,7 @@ pub fn build(b: *std.Build) void {
     // Set entry to disabled for WebAssembly library
     wasm_lib.entry = .disabled;
 
-    // Set initial memory and enable memory export
-    // wasm-ld needs ~1MB of static segments (std tables, panic paths), so
-    // the floor is 17 pages; 20 gives headroom. max_memory is an unused cap.
+    // Static segments need ~1MB, so the floor is 17 pages; 20 gives headroom.
     wasm_lib.initial_memory = 20 * 64 * 1024; // 20 pages (~1.25MB)
     wasm_lib.max_memory = 16 * 1024 * 1024; // 16MB max memory
     wasm_lib.export_memory = true;

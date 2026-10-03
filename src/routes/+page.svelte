@@ -1,27 +1,27 @@
 <script lang="ts">
-    import { resolve } from "$app/paths";
-    import Footer from "$lib/components/Footer.svelte";
-    import LrcTab from "$lib/components/LrcTab.svelte";
-    import LyricsfileTab from "$lib/components/LyricsfileTab.svelte";
-    import { validateLyricsfileYaml } from "$lib/lyricsfile/validator";
-    import { type ActiveSolve, startSolve } from "$lib/solver-pool";
-    import type { Challenge, FormData } from "$lib/types";
-    import { numify } from "numify";
-    import { onDestroy, onMount } from "svelte";
+    import { resolve } from '$app/paths';
+    import Footer from '$lib/components/Footer.svelte';
+    import LrcTab from '$lib/components/LrcTab.svelte';
+    import LyricsfileTab from '$lib/components/LyricsfileTab.svelte';
+    import { validateLyricsfileYaml } from '$lib/lyricsfile/validator';
+    import { type ActiveSolve, startSolve } from '$lib/solver-pool';
+    import type { Challenge, FormData } from '$lib/types';
+    import { numify } from 'numify';
+    import { onDestroy, onMount } from 'svelte';
 
     // Initialize form data with default values
     let formData = $state<FormData>({
-        trackName: "",
-        artistName: "",
-        albumName: "",
-        duration: "",
-        plainLyrics: "",
-        syncedLyrics: "",
-        lyricsfile: "",
+        trackName: '',
+        artistName: '',
+        albumName: '',
+        duration: '',
+        plainLyrics: '',
+        syncedLyrics: '',
+        lyricsfile: ''
     });
 
     // Active publish format
-    let activeFormat = $state<"lrc" | "lyricsfile">("lrc");
+    let activeFormat = $state<'lrc' | 'lyricsfile'>('lrc');
 
     // UI state variables
     let isSubmitting = $state(false);
@@ -35,7 +35,7 @@
         nonce: 0,
         startTime: 0,
         rate: 0,
-        workers: 0,
+        workers: 0
     });
 
     let solveTime = $state(0);
@@ -47,12 +47,12 @@
 
     let successTimeout: number;
 
-    // Active PoW solve (cancelled on unmount to avoid leaking workers).
+    // Active solve; cancelled on unmount so workers don't leak.
     let activeSolve: ActiveSolve | null = null;
 
     onDestroy(() => activeSolve?.cancel());
 
-    // Form payload for /api/publish: every field the form can produce.
+    // Form payload for /api/publish.
     interface PublishPayload {
         trackName: string;
         artistName: string;
@@ -89,7 +89,7 @@
                 nonce: 0,
                 startTime: 0,
                 rate: 0,
-                workers: 0,
+                workers: 0
             };
         }, 5000);
     }
@@ -115,21 +115,21 @@
      */
     async function requestChallenge(): Promise<Challenge> {
         try {
-            const response = await fetch("/api/request-challenge", {
-                method: "POST",
+            const response = await fetch('/api/request-challenge', {
+                method: 'POST'
             });
 
             if (!response.ok) {
                 const errorData = await response
                     .json()
-                    .catch(() => ({ message: "Failed to get challenge" }));
+                    .catch(() => ({ message: 'Failed to get challenge' }));
 
-                throw new Error(errorData.message || "Failed to get challenge");
+                throw new Error(errorData.message || 'Failed to get challenge');
             }
 
             return await response.json();
         } catch (err) {
-            throw new Error("Failed to get challenge");
+            throw new Error('Failed to get challenge');
         }
     }
 
@@ -137,33 +137,28 @@
      * Reset the form to its initial state
      */
     function resetForm() {
-        formData.trackName = "";
-        formData.artistName = "";
-        formData.albumName = "";
-        formData.duration = "";
-        formData.plainLyrics = "";
-        formData.syncedLyrics = "";
-        formData.lyricsfile = "";
+        formData.trackName = '';
+        formData.artistName = '';
+        formData.albumName = '';
+        formData.duration = '';
+        formData.plainLyrics = '';
+        formData.syncedLyrics = '';
+        formData.lyricsfile = '';
 
         // Reset file inputs
-        // SAFETY: these ids are rendered by this form's own tab markup, so
-        // the elements exist while the form is mounted; the null check
-        // below tolerates absence regardless.
-        const fileInput = document.getElementById(
-            "lrcFile",
-        ) as HTMLInputElement;
+        // SAFETY: ids come from this form's own tab markup; the null
+        // check below tolerates absence regardless.
+        const fileInput = document.getElementById('lrcFile') as HTMLInputElement;
 
         if (fileInput) {
-            fileInput.value = "";
+            fileInput.value = '';
         }
 
-        // SAFETY: same static-markup guarantee as above, plus null check.
-        const lfFileInput = document.getElementById(
-            "lfFile",
-        ) as HTMLInputElement;
+        // SAFETY: as above, plus null check.
+        const lfFileInput = document.getElementById('lfFile') as HTMLInputElement;
 
         if (lfFileInput) {
-            lfFileInput.value = "";
+            lfFileInput.value = '';
         }
     }
 
@@ -181,47 +176,36 @@
 
             // Validate required fields
             if (!formData.trackName.trim()) {
-                setError("Track name is required");
+                setError('Track name is required');
 
                 return;
             }
 
             if (!formData.artistName.trim()) {
-                setError("Artist name is required");
+                setError('Artist name is required');
 
                 return;
             }
 
-            if (activeFormat === "lyricsfile") {
+            if (activeFormat === 'lyricsfile') {
                 if (!formData.lyricsfile.trim()) {
-                    setError("Lyricsfile content is required");
+                    setError('Lyricsfile content is required');
 
                     return;
                 }
 
-                const lfVal = validateLyricsfileYaml(
-                    formData.lyricsfile.trim(),
-                );
+                const lfVal = validateLyricsfileYaml(formData.lyricsfile.trim());
 
                 if (lfVal.hasErrors) {
-                    setError(
-                        "Please fix Lyricsfile validation errors before publishing",
-                    );
+                    setError('Please fix Lyricsfile validation errors before publishing');
 
                     return;
                 }
             } else {
-                if (
-                    !formData.plainLyrics.trim() &&
-                    !formData.syncedLyrics.trim()
-                ) {
-                    if (
-                        !confirm(
-                            "No lyrics provided. Is this an instrumental track?",
-                        )
-                    ) {
+                if (!formData.plainLyrics.trim() && !formData.syncedLyrics.trim()) {
+                    if (!confirm('No lyrics provided. Is this an instrumental track?')) {
                         setError(
-                            "Please provide lyrics or confirm if this is an instrumental track",
+                            'Please provide lyrics or confirm if this is an instrumental track'
                         );
 
                         return;
@@ -238,11 +222,10 @@
                 nonce: 0,
                 startTime: Date.now(),
                 rate: 0,
-                workers: 0,
+                workers: 0
             };
 
-            // Solve the challenge with a strided worker pool (one worker
-            // per core, first solution wins).
+            // Strided pool: one worker per core, first solution wins.
             activeSolve = startSolve(
                 challenge.prefix,
                 challenge.target,
@@ -252,9 +235,9 @@
                         attempts,
                         nonce: 0,
                         startTime: solveProgress.startTime || Date.now(),
-                        workers,
+                        workers
                     };
-                },
+                }
             );
 
             const { nonce, attempts, totalTime } = await activeSolve.promise;
@@ -268,49 +251,40 @@
             const payload: PublishPayload = {
                 trackName: formData.trackName.trim(),
                 artistName: formData.artistName.trim(),
-                albumName: formData.albumName?.trim() || "",
-                duration: formData.duration
-                    ? Number.parseInt(formData.duration, 10)
-                    : undefined,
+                albumName: formData.albumName?.trim() || '',
+                duration: formData.duration ? Number.parseInt(formData.duration, 10) : undefined
             };
 
-            if (activeFormat === "lyricsfile") {
+            if (activeFormat === 'lyricsfile') {
                 payload.lyricsfile = formData.lyricsfile.trim();
             } else {
-                payload.plainLyrics = formData.plainLyrics?.trim() || "";
-                payload.syncedLyrics = formData.syncedLyrics?.trim() || "";
+                payload.plainLyrics = formData.plainLyrics?.trim() || '';
+                payload.syncedLyrics = formData.syncedLyrics?.trim() || '';
             }
 
-            const response = await fetch("/api/publish", {
-                method: "POST",
+            const response = await fetch('/api/publish', {
+                method: 'POST',
                 headers: {
-                    "Content-Type": "application/json",
-                    "X-Publish-Token": publishToken,
+                    'Content-Type': 'application/json',
+                    'X-Publish-Token': publishToken
                 },
-                body: JSON.stringify(payload),
+                body: JSON.stringify(payload)
             });
 
             if (!response.ok) {
                 const errorData = await response
                     .json()
-                    .catch(() => ({ message: "Failed to publish lyrics" }));
+                    .catch(() => ({ message: 'Failed to publish lyrics' }));
 
-                throw new Error(
-                    errorData.message || "Failed to publish lyrics",
-                );
+                throw new Error(errorData.message || 'Failed to publish lyrics');
             }
 
             setSuccess();
             resetForm();
         } catch (err) {
-            setError(
-                err instanceof Error
-                    ? err.message
-                    : "An unknown error occurred",
-            );
+            setError(err instanceof Error ? err.message : 'An unknown error occurred');
         } finally {
             isSubmitting = false;
-            // Pool workers are terminated on settle; drop the handle.
             activeSolve = null;
         }
     }
@@ -318,10 +292,10 @@
     // Initialize form data from URL parameters if available
     onMount(() => {
         const urlParams = new URLSearchParams(window.location.search);
-        const titleParam = urlParams.get("title");
-        const artistParam = urlParams.get("artist");
-        const albumParam = urlParams.get("album");
-        const durationParam = urlParams.get("duration");
+        const titleParam = urlParams.get('title');
+        const artistParam = urlParams.get('artist');
+        const albumParam = urlParams.get('album');
+        const durationParam = urlParams.get('duration');
 
         if (titleParam) formData.trackName = decodeURIComponent(titleParam);
 
@@ -329,8 +303,7 @@
 
         if (albumParam) formData.albumName = decodeURIComponent(albumParam);
 
-        if (durationParam)
-            formData.duration = decodeURIComponent(durationParam);
+        if (durationParam) formData.duration = decodeURIComponent(durationParam);
     });
 </script>
 
@@ -358,7 +331,7 @@
                 LRCLIBpub
             </h1>
             <a
-                href={resolve("/search")}
+                href={resolve('/search')}
                 class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
             >
                 <svg
@@ -382,8 +355,7 @@
         <!-- Introduction -->
         <div class="text-indigo-800 mb-6">
             <p>
-                Welcome to LRCLIBpub - a simple web interface to publish lyrics
-                to the
+                Welcome to LRCLIBpub - a simple web interface to publish lyrics to the
                 <a
                     href="https://lrclib.net"
                     target="_blank"
@@ -393,9 +365,8 @@
                 lyrics database.
             </p>
             <p class="mt-3">
-                Please be mindful of the quality and accuracy of the lyrics you
-                submit. This is a crowd-sourced effort, and your contributions
-                enhance the database for everyone.
+                Please be mindful of the quality and accuracy of the lyrics you submit. This is a
+                crowd-sourced effort, and your contributions enhance the database for everyone.
             </p>
         </div>
 
@@ -446,14 +417,11 @@
                                 />
                             </svg>
                             <div>
-                                <div class="font-medium">
-                                    Lyrics published successfully!
-                                </div>
+                                <div class="font-medium">Lyrics published successfully!</div>
                                 {#if solveTime > 0}
                                     <div class="text-sm text-green-600">
-                                        Proof-of-work solved in {formatSolveTime(
-                                            solveTime,
-                                        )} with {solveAttempts} attempts.
+                                        Proof-of-work solved in {formatSolveTime(solveTime)} with {solveAttempts}
+                                        attempts.
                                     </div>
                                 {/if}
                             </div>
@@ -471,9 +439,7 @@
                                 ></div>
                                 <div class="flex flex-col">
                                     {#if solveProgress.attempts > 0}
-                                        <p
-                                            class="text-sm font-medium text-indigo-800"
-                                        >
+                                        <p class="text-sm font-medium text-indigo-800">
                                             Solving proof of work...
                                         </p>
                                         <div
@@ -481,24 +447,20 @@
                                         >
                                             <span
                                                 >{(
-                                                    (Date.now() -
-                                                        solveProgress.startTime) /
+                                                    (Date.now() - solveProgress.startTime) /
                                                     1000
                                                 ).toFixed(1)}s</span
                                             >
                                             <span>•</span>
                                             <span>
-                                                {numify(solveProgress.rate)} hashes/s{#if solveProgress.workers > 1}{" · "}{solveProgress.workers} workers{/if}
+                                                {numify(solveProgress.rate)} hashes/s{#if solveProgress.workers > 1}{' · '}{solveProgress.workers}
+                                                    workers{/if}
                                             </span>
                                             <span>•</span>
-                                            <span
-                                                >Attempts: {solveProgress.attempts}</span
-                                            >
+                                            <span>Attempts: {solveProgress.attempts}</span>
                                         </div>
                                     {:else}
-                                        <p
-                                            class="text-sm font-medium text-indigo-800"
-                                        >
+                                        <p class="text-sm font-medium text-indigo-800">
                                             Publishing...
                                         </p>
                                     {/if}
@@ -513,9 +475,7 @@
             <div class="space-y-4">
                 <!-- Track Name -->
                 <div>
-                    <label
-                        for="trackName"
-                        class="block text-sm font-medium mb-1"
+                    <label for="trackName" class="block text-sm font-medium mb-1"
                         >Track Name *</label
                     >
                     <input
@@ -530,9 +490,7 @@
 
                 <!-- Artist Name -->
                 <div>
-                    <label
-                        for="artistName"
-                        class="block text-sm font-medium mb-1"
+                    <label for="artistName" class="block text-sm font-medium mb-1"
                         >Artist Name *</label
                     >
                     <input
@@ -547,10 +505,7 @@
 
                 <!-- Album Name -->
                 <div>
-                    <label
-                        for="albumName"
-                        class="block text-sm font-medium mb-1">Album Name</label
-                    >
+                    <label for="albumName" class="block text-sm font-medium mb-1">Album Name</label>
                     <input
                         type="text"
                         id="albumName"
@@ -579,7 +534,7 @@
                 <div class="flex gap-2">
                     <button
                         type="button"
-                        onclick={() => (activeFormat = "lrc")}
+                        onclick={() => (activeFormat = 'lrc')}
                         class="px-4 py-2 rounded-md text-sm font-medium border {activeFormat ===
                         'lrc'
                             ? 'bg-indigo-600 text-white border-indigo-600'
@@ -589,7 +544,7 @@
                     </button>
                     <button
                         type="button"
-                        onclick={() => (activeFormat = "lyricsfile")}
+                        onclick={() => (activeFormat = 'lyricsfile')}
                         class="px-4 py-2 rounded-md text-sm font-medium border {activeFormat ===
                         'lyricsfile'
                             ? 'bg-indigo-600 text-white border-indigo-600'
@@ -600,10 +555,8 @@
                 </div>
 
                 <!-- Lyrics input — tab content -->
-                <div
-                    class="p-4 border border-dashed border-indigo-300 rounded-lg bg-indigo-50/50"
-                >
-                    {#if activeFormat === "lrc"}
+                <div class="p-4 border border-dashed border-indigo-300 rounded-lg bg-indigo-50/50">
+                    {#if activeFormat === 'lrc'}
                         <LrcTab
                             bind:plainLyrics={formData.plainLyrics}
                             bind:syncedLyrics={formData.syncedLyrics}
@@ -647,13 +600,12 @@
                             <p class="font-semibold mb-1">Before You Proceed</p>
                             <ul class="list-disc list-inside space-y-1">
                                 <li>
-                                    LRCLIB does not allow deletion or
-                                    replacement of lyrics via their API.
+                                    LRCLIB does not allow deletion or replacement of lyrics via
+                                    their API.
                                 </li>
                                 <li>
-                                    Once submitted, lyrics are permanent.
-                                    Carefully verify all information before
-                                    publishing.
+                                    Once submitted, lyrics are permanent. Carefully verify all
+                                    information before publishing.
                                 </li>
                             </ul>
                         </div>
@@ -661,13 +613,10 @@
                 </div>
 
                 <!-- Proof-of-work warning -->
-                <div
-                    class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md"
-                >
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md">
                     <p class="text-sm text-yellow-800">
-                        <strong>Note:</strong> Publishing involves solving a proof-of-work
-                        challenge. This process may take several minutes and could
-                        slow down your browser or device.
+                        <strong>Note:</strong> Publishing involves solving a proof-of-work challenge.
+                        This process may take several minutes and could slow down your browser or device.
                     </p>
                 </div>
             </div>
@@ -675,14 +624,10 @@
             <!-- Submit button -->
             <button
                 type="submit"
-                disabled={isSubmitting ||
-                    !formData.trackName.trim() ||
-                    !formData.artistName.trim()}
+                disabled={isSubmitting || !formData.trackName.trim() || !formData.artistName.trim()}
                 class="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg hover:cursor-pointer hover:bg-indigo-700 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-                {isSubmitting
-                    ? "Publishing, this might take a while..."
-                    : "Publish Lyrics"}
+                {isSubmitting ? 'Publishing, this might take a while...' : 'Publish Lyrics'}
             </button>
         </form>
 

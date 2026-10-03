@@ -1,190 +1,190 @@
-import { validateLRC } from "$lib/lrc/validator";
-import { validateLyricsfileYaml } from "$lib/lyricsfile/validator";
-import { USER_AGENT } from "$lib/types";
-import { json } from "@sveltejs/kit";
-import type { RequestHandler } from "./$types";
+import { validateLRC } from '$lib/lrc/validator';
+import { validateLyricsfileYaml } from '$lib/lyricsfile/validator';
+import { USER_AGENT } from '$lib/types';
+import { json } from '@sveltejs/kit';
+
+import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async ({ request }) => {
-  const publishToken = request.headers.get("X-Publish-Token");
+    const publishToken = request.headers.get('X-Publish-Token');
 
-  if (!publishToken) {
-    return json(
-      {
-        message: "Missing publish token",
-        name: "ValidationError",
-        statusCode: 400,
-      },
-      { status: 400 },
-    );
-  }
-
-  let body;
-
-  try {
-    body = await request.json();
-  } catch {
-    return json(
-      {
-        message: "Invalid JSON body",
-        name: "ValidationError",
-        statusCode: 400,
-      },
-      { status: 400 },
-    );
-  }
-
-  const { trackName, artistName, albumName, duration, plainLyrics, syncedLyrics, lyricsfile } =
-    body;
-
-  // Validate required fields
-  if (!trackName?.trim()) {
-    return json(
-      {
-        message: "Track name is required",
-        name: "ValidationError",
-        statusCode: 400,
-      },
-      { status: 400 },
-    );
-  }
-
-  if (!artistName?.trim()) {
-    return json(
-      {
-        message: "Artist name is required",
-        name: "ValidationError",
-        statusCode: 400,
-      },
-      { status: 400 },
-    );
-  }
-
-  // Boundary decoder: request.json() is untyped, so string fields are
-  // narrowed through a predicate before use.
-  function isNonEmptyString(v: unknown): v is string {
-    return typeof v === "string" && v.trim().length > 0;
-  }
-
-  const hasLyricsfile = isNonEmptyString(body?.lyricsfile);
-
-  // Validate lyricsfile if provided (takes precedence)
-  if (hasLyricsfile) {
-    const lfValidation = validateLyricsfileYaml(lyricsfile.trim());
-
-    if (lfValidation.hasErrors) {
-      const errorMessages = lfValidation.issues
-        .filter((i) => i.severity === "error")
-        .map((i) => `${i.path}: ${i.message}`)
-        .join("; ");
-
-      return json(
-        {
-          message: `Lyricsfile validation failed: ${errorMessages}`,
-          name: "ValidationError",
-          statusCode: 400,
-          validationIssues: lfValidation.issues,
-        },
-        { status: 400 },
-      );
-    }
-  } else if (syncedLyrics?.trim()) {
-    const validation = validateLRC(syncedLyrics.trim());
-
-    if (validation.hasErrors) {
-      const errorMessages = validation.issues
-        .filter((issue) => issue.severity === "error")
-        .map((issue) => `Line ${issue.line}: ${issue.message}`)
-        .join("; ");
-
-      return json(
-        {
-          message: `LRC validation failed: ${errorMessages}`,
-          name: "ValidationError",
-          statusCode: 400,
-          validationIssues: validation.issues,
-        },
-        { status: 400 },
-      );
-    }
-  }
-
-  // Build the request body for LRCLIB
-  const lrclibBody: any = {
-    trackName: trackName.trim(),
-    artistName: artistName.trim(),
-    albumName: "",
-  };
-
-  if (albumName?.trim()) {
-    lrclibBody.albumName = albumName.trim();
-  }
-
-  if (duration && Number.isInteger(duration) && duration > 0) {
-    lrclibBody.duration = duration;
-  }
-
-  if (hasLyricsfile) {
-    lrclibBody.lyricsfile = lyricsfile.trim();
-  } else {
-    if (plainLyrics?.trim()) {
-      lrclibBody.plainLyrics = plainLyrics.trim();
+    if (!publishToken) {
+        return json(
+            {
+                message: 'Missing publish token',
+                name: 'ValidationError',
+                statusCode: 400
+            },
+            { status: 400 }
+        );
     }
 
-    if (syncedLyrics?.trim()) {
-      lrclibBody.syncedLyrics = syncedLyrics.trim();
-    }
-  }
-
-  try {
-    const response = await fetch("https://lrclib.net/api/publish", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Publish-Token": publishToken,
-        "Lrclib-Client": USER_AGENT,
-      },
-      body: JSON.stringify(lrclibBody),
-    });
-
-    let data;
+    let body;
 
     try {
-      const responseText = await response.text();
-      data = responseText ? JSON.parse(responseText) : { message: "No response content" };
+        body = await request.json();
     } catch {
-      data = { message: "Failed to parse response" };
+        return json(
+            {
+                message: 'Invalid JSON body',
+                name: 'ValidationError',
+                statusCode: 400
+            },
+            { status: 400 }
+        );
     }
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({
-        message: data.message || "Failed to publish lyrics",
-        name: "UnknownError",
-        statusCode: response.status,
-      }));
+    const { trackName, artistName, albumName, duration, plainLyrics, syncedLyrics, lyricsfile } =
+        body;
 
-      return json(errorData, { status: response.status });
+    // Validate required fields
+    if (!trackName?.trim()) {
+        return json(
+            {
+                message: 'Track name is required',
+                name: 'ValidationError',
+                statusCode: 400
+            },
+            { status: 400 }
+        );
     }
 
-    return json(data);
-  } catch (err) {
-    if (err instanceof Error && err.message.includes("fetch")) {
-      return json(
-        {
-          message: "Failed to connect to LRCLIB API",
-          name: "UnknownError",
-          statusCode: 503,
-        },
-        { status: 503 },
-      );
+    if (!artistName?.trim()) {
+        return json(
+            {
+                message: 'Artist name is required',
+                name: 'ValidationError',
+                statusCode: 400
+            },
+            { status: 400 }
+        );
     }
 
-    return json(
-      {
-        message: "An unexpected error occurred",
-        name: "UnknownError",
-        statusCode: 500,
-      },
-      { status: 500 },
-    );
-  }
+    // request.json() is untyped; narrow string fields through a predicate.
+    function isNonEmptyString(v: unknown): v is string {
+        return typeof v === 'string' && v.trim().length > 0;
+    }
+
+    const hasLyricsfile = isNonEmptyString(body?.lyricsfile);
+
+    // Validate lyricsfile if provided (takes precedence)
+    if (hasLyricsfile) {
+        const lfValidation = validateLyricsfileYaml(lyricsfile.trim());
+
+        if (lfValidation.hasErrors) {
+            const errorMessages = lfValidation.issues
+                .filter((i) => i.severity === 'error')
+                .map((i) => `${i.path}: ${i.message}`)
+                .join('; ');
+
+            return json(
+                {
+                    message: `Lyricsfile validation failed: ${errorMessages}`,
+                    name: 'ValidationError',
+                    statusCode: 400,
+                    validationIssues: lfValidation.issues
+                },
+                { status: 400 }
+            );
+        }
+    } else if (syncedLyrics?.trim()) {
+        const validation = validateLRC(syncedLyrics.trim());
+
+        if (validation.hasErrors) {
+            const errorMessages = validation.issues
+                .filter((issue) => issue.severity === 'error')
+                .map((issue) => `Line ${issue.line}: ${issue.message}`)
+                .join('; ');
+
+            return json(
+                {
+                    message: `LRC validation failed: ${errorMessages}`,
+                    name: 'ValidationError',
+                    statusCode: 400,
+                    validationIssues: validation.issues
+                },
+                { status: 400 }
+            );
+        }
+    }
+
+    // Build the request body for LRCLIB
+    const lrclibBody: any = {
+        trackName: trackName.trim(),
+        artistName: artistName.trim(),
+        albumName: ''
+    };
+
+    if (albumName?.trim()) {
+        lrclibBody.albumName = albumName.trim();
+    }
+
+    if (duration && Number.isInteger(duration) && duration > 0) {
+        lrclibBody.duration = duration;
+    }
+
+    if (hasLyricsfile) {
+        lrclibBody.lyricsfile = lyricsfile.trim();
+    } else {
+        if (plainLyrics?.trim()) {
+            lrclibBody.plainLyrics = plainLyrics.trim();
+        }
+
+        if (syncedLyrics?.trim()) {
+            lrclibBody.syncedLyrics = syncedLyrics.trim();
+        }
+    }
+
+    try {
+        const response = await fetch('https://lrclib.net/api/publish', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Publish-Token': publishToken,
+                'Lrclib-Client': USER_AGENT
+            },
+            body: JSON.stringify(lrclibBody)
+        });
+
+        let data;
+
+        try {
+            const responseText = await response.text();
+            data = responseText ? JSON.parse(responseText) : { message: 'No response content' };
+        } catch {
+            data = { message: 'Failed to parse response' };
+        }
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({
+                message: data.message || 'Failed to publish lyrics',
+                name: 'UnknownError',
+                statusCode: response.status
+            }));
+
+            return json(errorData, { status: response.status });
+        }
+
+        return json(data);
+    } catch (err) {
+        if (err instanceof Error && err.message.includes('fetch')) {
+            return json(
+                {
+                    message: 'Failed to connect to LRCLIB API',
+                    name: 'UnknownError',
+                    statusCode: 503
+                },
+                { status: 503 }
+            );
+        }
+
+        return json(
+            {
+                message: 'An unexpected error occurred',
+                name: 'UnknownError',
+                statusCode: 500
+            },
+            { status: 500 }
+        );
+    }
 };

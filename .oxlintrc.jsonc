@@ -16,9 +16,7 @@
         ".svelte-kit/**",
         "tools/oxlint/anti-slop/**"
     ],
-    "jsPlugins": [
-        { "name": "anti-slop", "specifier": "./tools/oxlint/anti-slop/index.ts" }
-    ],
+    "jsPlugins": [{ "name": "anti-slop", "specifier": "./tools/oxlint/anti-slop/index.ts" }],
     "rules": {
         "oxc/no-accumulating-spread": "error",
         "anti-slop/no-array-filter-map": "error",
@@ -30,9 +28,7 @@
         "anti-slop/no-object-parameters": "error",
         "anti-slop/no-reflect-apply": "error",
         "anti-slop/no-reflect-get": "error",
-        // allowInTypeGuards is the rule's documented path for I/O-boundary
-        // decoders: typeof checks inside `v is T` predicates are the boundary
-        // parsing the rule asks for, not unparsed narrowing.
+        // The rule's carve-out for `v is T` boundary decoders.
         "anti-slop/no-runtime-typeof": ["error", { "allowInTypeGuards": true }],
         "anti-slop/no-shape-in-symbol-names": "error",
         "anti-slop/no-unknown-parameters": "error",
