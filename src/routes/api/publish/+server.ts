@@ -59,7 +59,13 @@ export const POST: RequestHandler = async ({ request }) => {
     );
   }
 
-  const hasLyricsfile = typeof lyricsfile === "string" && lyricsfile.trim().length > 0;
+  // Boundary decoder: request.json() is untyped, so string fields are
+  // narrowed through a predicate before use.
+  function isNonEmptyString(v: unknown): v is string {
+    return typeof v === "string" && v.trim().length > 0;
+  }
+
+  const hasLyricsfile = isNonEmptyString(body?.lyricsfile);
 
   // Validate lyricsfile if provided (takes precedence)
   if (hasLyricsfile) {

@@ -19,9 +19,20 @@ export interface LyricsfileValidationResult {
   data: unknown | null;
 }
 
-function isObject(v: unknown): v is Record<string, unknown> {
+type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
+
+function isObject(v: unknown): v is Record<string, JsonValue> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
+
+function isString(v: unknown): v is string {
+  return typeof v === "string";
+}
+
+function isBoolean(v: unknown): v is boolean {
+  return typeof v === "boolean";
+}
+
 function isInt(v: unknown): v is number {
   return typeof v === "number" && Number.isInteger(v);
 }
@@ -53,7 +64,7 @@ export function validateLyricsfileYaml(raw: string): LyricsfileValidationResult 
     };
   }
 
-  const obj: any = rawParsed;
+  const obj: unknown = rawParsed;
 
   if (!isObject(obj)) {
     return {
@@ -78,34 +89,32 @@ export function validateLyricsfileYaml(raw: string): LyricsfileValidationResult 
   }
 
   // metadata
-  if (
-    !("metadata" in obj) ||
-    typeof obj.metadata !== "object" ||
-    obj.metadata === null ||
-    Array.isArray(obj.metadata)
-  ) {
+  if (!("metadata" in obj) || !isObject(obj.metadata)) {
     issues.push({
       path: "metadata",
       severity: "error",
       message: "Missing or invalid metadata (must be a mapping)",
     });
   } else {
-    const m: any = obj.metadata;
-    if (!("title" in m) || typeof m.title !== "string" || !m.title.trim()) {
+    const m = obj.metadata;
+
+    if (!("title" in m) || !isString(m.title) || !m.title.trim()) {
       issues.push({
         path: "metadata.title",
         severity: "error",
         message: "metadata.title is required and must be non-empty string",
       });
     }
-    if (!("artist" in m) || typeof m.artist !== "string" || !m.artist.trim()) {
+
+    if (!("artist" in m) || !isString(m.artist) || !m.artist.trim()) {
       issues.push({
         path: "metadata.artist",
         severity: "error",
         message: "metadata.artist is required and must be non-empty string",
       });
     }
-    if ("album" in m && m.album !== null && typeof m.album !== "string") {
+
+    if ("album" in m && m.album !== null && !isString(m.album)) {
       issues.push({
         path: "metadata.album",
         severity: "error",
@@ -139,14 +148,16 @@ export function validateLyricsfileYaml(raw: string): LyricsfileValidationResult 
         });
       }
     }
-    if ("language" in m && m.language !== null && typeof m.language !== "string") {
+
+    if ("language" in m && m.language !== null && !isString(m.language)) {
       issues.push({
         path: "metadata.language",
         severity: "error",
         message: "metadata.language must be a string",
       });
     }
-    if ("instrumental" in m && m.instrumental !== null && typeof m.instrumental !== "boolean") {
+
+    if ("instrumental" in m && m.instrumental !== null && !isBoolean(m.instrumental)) {
       issues.push({
         path: "metadata.instrumental",
         severity: "error",
@@ -165,7 +176,8 @@ export function validateLyricsfileYaml(raw: string): LyricsfileValidationResult 
           message: "instrumental tracks must not have lines",
         });
       }
-      if (typeof obj.plain === "string" && obj.plain.trim().length > 0) {
+
+      if (isString(obj.plain) && obj.plain.trim().length > 0) {
         issues.push({
           path: "plain",
           severity: "error",
@@ -181,11 +193,14 @@ export function validateLyricsfileYaml(raw: string): LyricsfileValidationResult 
       } else {
         obj.lines.forEach((line: any, idx: number) => {
           const base = `lines[${idx}]`;
-          if (typeof line !== "object" || line === null || Array.isArray(line)) {
+
+          if (!isObject(line)) {
             issues.push({ path: base, severity: "error", message: "line must be a mapping" });
+
             return;
           }
-          if (!("text" in line) || typeof line.text !== "string" || !line.text.trim()) {
+
+          if (!("text" in line) || !isString(line.text) || !line.text.trim()) {
             issues.push({
               path: `${base}.text`,
               severity: "error",
@@ -227,11 +242,14 @@ export function validateLyricsfileYaml(raw: string): LyricsfileValidationResult 
             } else {
               line.words.forEach((w: any, wi: number) => {
                 const wp = `${base}.words[${wi}]`;
-                if (typeof w !== "object" || w === null || Array.isArray(w)) {
+
+                if (!isObject(w)) {
                   issues.push({ path: wp, severity: "error", message: "word must be a mapping" });
+
                   return;
                 }
-                if (!("text" in w) || typeof w.text !== "string" || !w.text.trim()) {
+
+                if (!("text" in w) || !isString(w.text) || !w.text.trim()) {
                   issues.push({
                     path: `${wp}.text`,
                     severity: "error",
@@ -274,7 +292,7 @@ export function validateLyricsfileYaml(raw: string): LyricsfileValidationResult 
       "plain" in obj &&
       obj.plain !== null &&
       obj.plain !== undefined &&
-      typeof obj.plain !== "string"
+      !isString(obj.plain)
     ) {
       issues.push({ path: "plain", severity: "error", message: "plain must be a string" });
     }

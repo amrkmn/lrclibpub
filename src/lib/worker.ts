@@ -11,14 +11,53 @@
 // Fixed linear-memory layout: inputs are tiny (prefix <= 44 bytes,
 // target hex = 64 bytes), so fixed offsets replace the old bump allocator.
 const PREFIX_OFFSET = 0;
+
 const TARGET_OFFSET = 512;
+
 const MAX_PREFIX_BYTES = 44;
+
 const TARGET_HEX_RE = /^[0-9a-fA-F]{64}$/;
+
+// I/O-boundary decoders. postMessage payloads and WASM exports arrive
+// untyped; these predicates establish their contracts up front so the
+// solve path below works with narrowed types and no assertions.
+function isNonEmptyString(v: unknown): v is string {
+  return typeof v === "string" && v.length > 0;
+}
+
+interface WasmSolverExports {
+  solveChallenge: (
+    prefixOffset: number,
+    prefixLen: number,
+    targetOffset: number,
+    targetLen: number,
+    start: bigint,
+    step: bigint,
+  ) => bigint;
+  memory: WebAssembly.Memory;
+}
+
+function hasSolverExports(v: unknown): v is WasmSolverExports {
+  if (typeof v !== "object" || v === null) return false;
+
+  if (!("solveChallenge" in v) || !("memory" in v)) return false;
+  // SAFETY: the `in` checks above prove both keys exist on this object;
+  // the callable/instance checks below narrow them before anything is used.
+  const e = v as { solveChallenge: unknown; memory: unknown };
+
+  return (
+    typeof e.solveChallenge === "function" &&
+    e.memory instanceof WebAssembly.Memory
+  );
+}
 
 // Progress state for the currently running solve (reset per message).
 let activeJobId: number | null = null;
+
 let lastReportedHashes = 0;
+
 let lastProgressTime = 0;
+
 // Nonce space partition for this job: nonces are start + k*stride, so
 // (nonce - start) / stride == hashes tried. Rate math must use hashes,
 // not raw nonce deltas (which overstate throughput by stride-x).
@@ -57,11 +96,10 @@ async function getInstance(): Promise<WebAssembly.Instance> {
         },
       };
 
-      // Streaming compile is faster (compiles during download) but needs
-      // the server to serve application/wasm. Fall back to buffered
-      // instantiate on any failure (e.g. wrong MIME).
+      // Capability probe: streaming compile needs both the API and a host
+      // serving application/wasm. Fall back to buffered instantiate below.
       try {
-        if (typeof WebAssembly.instantiateStreaming === "function") {
+        if (typeof WebAssembly.instantiateStreaming !== "undefined") {
           const streaming = await WebAssembly.instantiateStreaming(
             fetch(url),
             importObject,
@@ -92,12 +130,7 @@ self.onmessage = async (e: MessageEvent) => {
   const startTime = Date.now();
 
   try {
-    if (
-      typeof prefix !== "string" ||
-      typeof target !== "string" ||
-      prefix.length === 0 ||
-      target.length === 0
-    ) {
+    if (!isNonEmptyString(prefix) || !isNonEmptyString(target)) {
       throw new Error("Invalid challenge: prefix and target are required");
     }
 
@@ -115,25 +148,17 @@ self.onmessage = async (e: MessageEvent) => {
     }
 
     const instance = await getInstance();
-    const exports = instance.exports as unknown as {
-      solveChallenge: (
-        prefixOffset: number,
-        prefixLen: number,
-        targetOffset: number,
-        targetLen: number,
-        start: bigint,
-        step: bigint,
-      ) => bigint;
-      memory: WebAssembly.Memory;
-    };
 
-    if (typeof exports.solveChallenge !== "function" || !exports.memory) {
+    if (!hasSolverExports(instance.exports)) {
       throw new Error(
-        `Required WASM exports missing. Available: ${Object.keys(exports).join(", ")}`,
+        `Required WASM exports missing. Available: ${Object.keys(instance.exports).join(", ")}`,
       );
     }
 
+    const exports = instance.exports;
+
     const memory = exports.memory;
+
     if (
       PREFIX_OFFSET + prefixBytes.length > memory.buffer.byteLength ||
       TARGET_OFFSET + targetBytes.length > memory.buffer.byteLength

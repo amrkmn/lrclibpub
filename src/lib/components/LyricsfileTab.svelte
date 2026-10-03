@@ -17,8 +17,53 @@
     } = $props();
 
     let validation = $state<LyricsfileValidationResult | null>(null);
+
     let showWarning = $state(false);
+
     let dismissed = $state(false);
+
+    // Boundary decoders for validator output: the YAML-derived payload is
+    // untrusted, so each field is narrowed through a predicate.
+    function isString(v: unknown): v is string {
+        return typeof v === "string";
+    }
+
+    function isNumber(v: unknown): v is number {
+        return typeof v === "number";
+    }
+
+    // Lyricsfile metadata fields arrive untyped from YAML; each field is
+    // narrowed through a predicate at use.
+    interface LyricsfileMetadata {
+        title?: unknown;
+        artist?: unknown;
+        album?: unknown;
+        duration_ms?: unknown;
+    }
+
+    function isMetadata(v: unknown): v is LyricsfileMetadata {
+        return typeof v === "object" && v !== null && !Array.isArray(v);
+    }
+
+    interface PreviewLine {
+        text: string;
+        start_ms: number;
+        end_ms?: number;
+    }
+
+    function isPreviewLine(v: unknown): v is PreviewLine {
+        if (typeof v !== "object" || v === null || Array.isArray(v)) return false;
+
+        // SAFETY: just established v is a non-array object; the field
+        // predicates below narrow each property before anything is used.
+        const l = v as { text: unknown; start_ms: unknown; end_ms?: unknown };
+
+        return (
+            isString(l.text) &&
+            isNumber(l.start_ms) &&
+            (l.end_ms === undefined || isNumber(l.end_ms))
+        );
+    }
 
     function runValidation() {
         if (!lyricsfile.trim()) {
@@ -37,12 +82,17 @@
         // auto-fill metadata if empty
         if (validation.data) {
             const d: any = validation.data;
-            const m = d?.metadata;
-            if (m) {
-                if (!trackName && typeof m.title === "string") trackName = m.title;
-                if (!artistName && typeof m.artist === "string") artistName = m.artist;
-                if (!albumName && typeof m.album === "string") albumName = m.album;
-                if (!duration && typeof m.duration_ms === "number") duration = Math.round(m.duration_ms / 1000).toString();
+
+            if (isMetadata(d?.metadata)) {
+                const m = d.metadata;
+
+                if (!trackName && isString(m.title)) trackName = m.title;
+
+                if (!artistName && isString(m.artist)) artistName = m.artist;
+
+                if (!albumName && isString(m.album)) albumName = m.album;
+
+                if (!duration && isNumber(m.duration_ms)) duration = Math.round(m.duration_ms / 1000).toString();
             }
         }
     }
@@ -53,7 +103,11 @@
     }
 
     async function onFileChange(e: Event) {
+        // SAFETY: onFileChange is bound to this component's own <input
+        // type=file>; target is that element while mounted, and the
+        // optional chain below tolerates absence regardless.
         const file = (e.target as HTMLInputElement)?.files?.[0];
+
         if (!file) return;
         lyricsfile = await file.text();
         dismissed = false;
@@ -63,8 +117,10 @@
     const previewLines = $derived.by(() => {
         if (!validation?.data) return null;
         const d: any = validation.data;
+
         if (!Array.isArray(d.lines)) return null;
-        return d.lines.slice(0, 20) as Array<{ text: string; start_ms: number; end_ms?: number }>;
+
+        return d.lines.filter(isPreviewLine).slice(0, 20);
     });
 </script>
 

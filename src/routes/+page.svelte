@@ -49,7 +49,19 @@
 
     // Active PoW solve (cancelled on unmount to avoid leaking workers).
     let activeSolve: ActiveSolve | null = null;
+
     onDestroy(() => activeSolve?.cancel());
+
+    // Form payload for /api/publish: every field the form can produce.
+    interface PublishPayload {
+        trackName: string;
+        artistName: string;
+        albumName: string;
+        duration?: number;
+        plainLyrics?: string;
+        syncedLyrics?: string;
+        lyricsfile?: string;
+    }
 
     /**
      * Set an error message with auto-dismiss after 5 seconds
@@ -60,7 +72,7 @@
         if (errorTimeout) clearTimeout(errorTimeout);
         errorTimeout = setTimeout(() => {
             error = null;
-        }, 5000) as unknown as number;
+        }, 5000);
     }
 
     /**
@@ -79,7 +91,7 @@
                 rate: 0,
                 workers: 0,
             };
-        }, 5000) as unknown as number;
+        }, 5000);
     }
 
     /**
@@ -134,6 +146,9 @@
         formData.lyricsfile = "";
 
         // Reset file inputs
+        // SAFETY: these ids are rendered by this form's own tab markup, so
+        // the elements exist while the form is mounted; the null check
+        // below tolerates absence regardless.
         const fileInput = document.getElementById(
             "lrcFile",
         ) as HTMLInputElement;
@@ -141,6 +156,8 @@
         if (fileInput) {
             fileInput.value = "";
         }
+
+        // SAFETY: same static-markup guarantee as above, plus null check.
         const lfFileInput = document.getElementById(
             "lfFile",
         ) as HTMLInputElement;
@@ -248,7 +265,7 @@
             const publishToken = `${challenge.prefix}:${nonce}`;
 
             // Submit lyrics through our API endpoint
-            const payload: Record<string, unknown> = {
+            const payload: PublishPayload = {
                 trackName: formData.trackName.trim(),
                 artistName: formData.artistName.trim(),
                 albumName: formData.albumName?.trim() || "",

@@ -62,7 +62,7 @@
         if (errorTimeout) clearTimeout(errorTimeout);
         errorTimeout = setTimeout(() => {
             error = null;
-        }, 5000) as unknown as number;
+        }, 5000);
     }
 
     /**
@@ -74,7 +74,7 @@
         if (successTimeout) clearTimeout(successTimeout);
         successTimeout = setTimeout(() => {
             success = null;
-        }, 3000) as unknown as number;
+        }, 3000);
     }
 
     /**
@@ -123,7 +123,7 @@
             copyTimeouts[buttonKey] = setTimeout(() => {
                 copiedStates[buttonKey] = false;
                 delete copyTimeouts[buttonKey];
-            }, 2000) as unknown as number;
+            }, 2000);
         } catch (err) {
             setError(`Failed to copy ${type.toLowerCase()}`);
         }
