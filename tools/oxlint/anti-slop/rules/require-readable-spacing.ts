@@ -32,6 +32,15 @@ const paddingRule = createPaddingLineRule([
         ':matches(TSDeclareFunction, FunctionDeclaration, ExportNamedDeclaration[declaration.type="TSDeclareFunction"], ExportNamedDeclaration[declaration.type="FunctionDeclaration"])',
     },
   },
+  // Local deviation: single-line let/const/var may stay grouped without
+  // blank lines. Last match wins, so this trailing "any" entry overrides
+  // the Program-level "always" entries above for short bindings only;
+  // multiline declarations still require blanks via the multiline-* entries.
+  {
+    blankLine: "any",
+    prev: ["singleline-const", "singleline-let", "singleline-var"],
+    next: ["singleline-const", "singleline-let", "singleline-var"],
+  },
 ]);
 
 /** Restore structural blank lines with whitespace-only fixes; keep local short bindings and overloads grouped. */

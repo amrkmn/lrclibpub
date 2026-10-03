@@ -12,6 +12,12 @@
 - **Registered as**: `anti-slop` jsPlugin in the repository-root
   `oxlint.config.ts`.
 - **Intentional deviations from the skill defaults**:
+  - `rules/require-readable-spacing.ts` appends a trailing `"any"` entry
+    letting adjacent single-line `let`/`const`/`var` stay grouped without
+    blank lines (last match wins, so it overrides the Program-level
+    `"always"` entries for short bindings only; multiline declarations
+    still require blanks). The rule's own docstring already promised
+    grouped short bindings; the vendored options did not.
   - Added `.svelte-kit/**` to `ignorePatterns` (SvelteKit generated
     output; nothing else in the repo needed ignoring).
   - Did **not** register the opt-in `anti-slop-effect` plugin: the
