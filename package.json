@@ -13,6 +13,7 @@
         "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
         "format": "oxfmt",
         "lint": "oxlint",
+        "test": "node --experimental-strip-types --test tests/",
         "deploy": "nub run build && wrangler deploy",
         "cf:dev": "wrangler dev .svelte-kit/cloudflare/_worker.js --compatibility-date=2024-09-23"
     },
