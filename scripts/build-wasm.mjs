@@ -64,7 +64,7 @@ try {
     const bytes = readFileSync(destPath);
     const sha = createHash('sha256').update(bytes).digest('hex');
     console.log(
-        `📏 solver.wasm: ${bytes.length} bytes (${(bytes.length / 1024).toFixed(1)} KiB), sha256: ${sha.slice(0, 16)}…`
+        `📏 solver.wasm: ${bytes.length} bytes (${(bytes.length / 1024).toFixed(1)} KiB), sha256: ${sha}`
     );
 
     console.log('✅ WASM build completed successfully!');

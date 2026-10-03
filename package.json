@@ -5,7 +5,7 @@
     "type": "module",
     "scripts": {
         "dev": "vite dev",
-        "build": "node scripts/build-wasm.mjs && vite build",
+        "build": "vite build",
         "build:fresh": "rm -r .svelte-kit/cloudflare && vite build",
         "build:wasm": "node scripts/build-wasm.mjs",
         "preview": "vite preview",
