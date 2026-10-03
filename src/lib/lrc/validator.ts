@@ -161,9 +161,6 @@ export function validateLRC(content: string): LRCValidationResult {
       return;
     }
 
-    // Extract lyrics text
-    const lyricsText = line.substring(timestampStr.length).trim();
-
     // Note: Empty lyrics (instrumental breaks) are valid, so we don't flag missing lyrics
 
     // Check for duplicate timestamps

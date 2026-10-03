@@ -19,15 +19,6 @@ export interface LyricsfileValidationResult {
   data: unknown | null;
 }
 
-function isString(v: unknown): v is string {
-  return typeof v === "string";
-}
-function isNumber(v: unknown): v is number {
-  return typeof v === "number";
-}
-function isBoolean(v: unknown): v is boolean {
-  return typeof v === "boolean";
-}
 function isObject(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }

@@ -21,7 +21,7 @@ export const POST: RequestHandler = async ({ request }) => {
   let body;
   try {
     body = await request.json();
-  } catch (err) {
+  } catch {
     return json(
       {
         message: "Invalid JSON body",
@@ -135,7 +135,7 @@ export const POST: RequestHandler = async ({ request }) => {
     try {
       const responseText = await response.text();
       data = responseText ? JSON.parse(responseText) : { message: "No response content" };
-    } catch (parseError) {
+    } catch {
       data = { message: "Failed to parse response" };
     }
 
