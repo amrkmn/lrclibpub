@@ -1,7 +1,7 @@
 <script lang="ts">
-    export let size: string = "size-4";
+    export let size: string = 'size-4';
 
-    export let className: string = "";
+    export let className: string = '';
 </script>
 
 <svg

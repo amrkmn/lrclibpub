@@ -8,12 +8,12 @@ A modern web application for publishing lyrics to the LRCLIB database. Built wit
 
 ## Features
 
--   Clean interface for submitting lyrics
--   Support for both plain and synced (LRC) lyrics
--   LRC file upload and parsing
--   High-performance proof-of-work using WebAssembly
--   Real-time progress tracking
--   Server-side API endpoints for security
+- Clean interface for submitting lyrics
+- Support for both plain and synced (LRC) lyrics
+- LRC file upload and parsing
+- High-performance proof-of-work using WebAssembly
+- Real-time progress tracking
+- Server-side API endpoints for security
 
 ## Usage
 
@@ -42,9 +42,11 @@ npm run deploy
 The application uses WebAssembly (written in Zig) for fast proof-of-work computation. A pre-built WASM module is included, so you don't need to rebuild it unless modifying the Zig code.
 
 **Prerequisites for WASM development:**
+
 - Zig compiler (latest stable) - Download from: https://ziglang.org/download/
 
 To rebuild WASM (requires Zig):
+
 ```bash
 npm run build:wasm
 ```

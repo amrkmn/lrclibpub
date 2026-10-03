@@ -1,44 +1,46 @@
 {
-  "name": "lrclibpub",
-  "version": "0.0.1",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "dev": "vite dev",
-    "build": "node scripts/build-wasm.mjs && vite build",
-    "build:fresh": "rm -r .svelte-kit/cloudflare && vite build",
-    "build:wasm": "node scripts/build-wasm.mjs",
-    "preview": "vite preview",
-    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-    "deploy": "nub run build && wrangler deploy",
-    "cf:dev": "wrangler dev .svelte-kit/cloudflare/_worker.js --compatibility-date=2024-09-23"
-  },
-  "devDependencies": {
-    "@oxlint/plugins": "1.86.0",
-    "@sveltejs/adapter-cloudflare": "^7.2.9",
-    "@sveltejs/kit": "^2.70.3",
-    "@sveltejs/vite-plugin-svelte": "^5.1.1",
-    "@tailwindcss/vite": "^4.3.3",
-    "oxfmt": "0.71.0",
-    "oxlint": "1.86.0",
-    "svelte": "^5.57.1",
-    "svelte-check": "^4.7.6",
-    "tailwindcss": "^4.3.3",
-    "typescript": "^5.9.3",
-    "vite": "^6.4.3",
-    "vite-plugin-devtools-json": "^1.1.0",
-    "wrangler": "^4.143.0"
-  },
-  "dependencies": {
-    "numify": "^1.1.2",
-    "yaml": "^2.9.1"
-  },
-  "devEngines": {
-    "packageManager": {
-      "name": "nub",
-      "version": "^0.9.6",
-      "onFail": "ignore"
+    "name": "lrclibpub",
+    "version": "0.0.1",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "vite dev",
+        "build": "node scripts/build-wasm.mjs && vite build",
+        "build:fresh": "rm -r .svelte-kit/cloudflare && vite build",
+        "build:wasm": "node scripts/build-wasm.mjs",
+        "preview": "vite preview",
+        "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+        "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+        "format": "oxfmt",
+        "lint": "oxlint",
+        "deploy": "nub run build && wrangler deploy",
+        "cf:dev": "wrangler dev .svelte-kit/cloudflare/_worker.js --compatibility-date=2024-09-23"
+    },
+    "dependencies": {
+        "numify": "^1.1.2",
+        "yaml": "^2.9.1"
+    },
+    "devDependencies": {
+        "@oxlint/plugins": "1.86.0",
+        "@sveltejs/adapter-cloudflare": "^7.2.9",
+        "@sveltejs/kit": "^2.70.3",
+        "@sveltejs/vite-plugin-svelte": "^5.1.1",
+        "@tailwindcss/vite": "^4.3.3",
+        "oxfmt": "0.71.0",
+        "oxlint": "1.86.0",
+        "svelte": "^5.57.1",
+        "svelte-check": "^4.7.6",
+        "tailwindcss": "^4.3.3",
+        "typescript": "^5.9.3",
+        "vite": "^6.4.3",
+        "vite-plugin-devtools-json": "^1.1.0",
+        "wrangler": "^4.143.0"
+    },
+    "devEngines": {
+        "packageManager": {
+            "name": "nub",
+            "version": "^0.9.6",
+            "onFail": "ignore"
+        }
     }
-  }
 }

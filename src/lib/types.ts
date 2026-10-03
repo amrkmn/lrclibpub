@@ -1,43 +1,43 @@
 export interface FormData {
-  trackName: string;
-  artistName: string;
-  albumName: string;
-  duration: string;
-  plainLyrics: string;
-  syncedLyrics: string;
-  lyricsfile: string;
+    trackName: string;
+    artistName: string;
+    albumName: string;
+    duration: string;
+    plainLyrics: string;
+    syncedLyrics: string;
+    lyricsfile: string;
 }
 
 export interface Challenge {
-  prefix: string;
-  target: string;
+    prefix: string;
+    target: string;
 }
 
 export interface PublishResponse {
-  code?: number;
-  name?: string;
-  message?: string;
+    code?: number;
+    name?: string;
+    message?: string;
 }
 
 export interface SearchParams {
-  q?: string;
-  track_name?: string;
-  artist_name?: string;
-  album_name?: string;
-  duration?: number;
-  page?: number;
+    q?: string;
+    track_name?: string;
+    artist_name?: string;
+    album_name?: string;
+    duration?: number;
+    page?: number;
 }
 
 export interface LyricResult {
-  id: number;
-  trackName: string;
-  artistName: string;
-  albumName?: string;
-  duration?: number;
-  plainLyrics?: string;
-  syncedLyrics?: string;
-  lyricsfile?: string | null;
-  instrumental: boolean;
+    id: number;
+    trackName: string;
+    artistName: string;
+    albumName?: string;
+    duration?: number;
+    plainLyrics?: string;
+    syncedLyrics?: string;
+    lyricsfile?: string | null;
+    instrumental: boolean;
 }
 
-export const USER_AGENT = "LRCLIBpub v1.0.0 (https://github.com/amrkmn/lrclibpub)";
+export const USER_AGENT = 'LRCLIBpub v1.0.0 (https://github.com/amrkmn/lrclibpub)';

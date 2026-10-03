@@ -4,16 +4,16 @@
  */
 
 export interface NormalizationResult {
-  normalized: string;
-  plainLyrics: string;
-  changes: number;
-  expandedLines: number;
+    normalized: string;
+    plainLyrics: string;
+    changes: number;
+    expandedLines: number;
 }
 
 export interface ELRCStrippingResult {
-  stripped: string;
-  plainLyrics: string;
-  linesAffected: number;
+    stripped: string;
+    plainLyrics: string;
+    linesAffected: number;
 }
 
 /**
@@ -34,98 +34,96 @@ const TIMESTAMP_PATTERN = /\[(\d{2}):(\d{2})\.(\d{2,3})\]/g;
  * @returns Normalized content with statistics
  */
 export function normalizeLRC(content: string): NormalizationResult {
-  const lines = content.split("\n");
-  const normalizedLines: string[] = [];
-  let changesCount = 0;
-  let expandedLinesCount = 0;
+    const lines = content.split('\n');
+    const normalizedLines: string[] = [];
+    let changesCount = 0;
+    let expandedLinesCount = 0;
 
-  lines.forEach((rawLine) => {
-    const line = rawLine.trim();
+    lines.forEach((rawLine) => {
+        const line = rawLine.trim();
 
-    // Preserve empty lines and metadata
-    if (!line || /^\[(ti|ar|al|length|offset):/i.test(line)) {
-      normalizedLines.push(line);
+        // Preserve empty lines and metadata
+        if (!line || /^\[(ti|ar|al|length|offset):/i.test(line)) {
+            normalizedLines.push(line);
 
-      return;
-    }
+            return;
+        }
 
-    // Extract all timestamps from the line
-    const timestamps: string[] = [];
-    let match;
-    const timestampRegex = new RegExp(TIMESTAMP_PATTERN);
+        // Extract all timestamps from the line
+        const timestamps: string[] = [];
+        let match;
+        const timestampRegex = new RegExp(TIMESTAMP_PATTERN);
 
-    while ((match = timestampRegex.exec(line)) !== null) {
-      timestamps.push(match[0]); // Full timestamp including brackets
-    }
+        while ((match = timestampRegex.exec(line)) !== null) {
+            timestamps.push(match[0]); // Full timestamp including brackets
+        }
 
-    // If no timestamps or only one timestamp, keep line as-is
-    if (timestamps.length <= 1) {
-      normalizedLines.push(line);
+        // If no timestamps or only one timestamp, keep line as-is
+        if (timestamps.length <= 1) {
+            normalizedLines.push(line);
 
-      return;
-    }
+            return;
+        }
 
-    // Multi-timestamp detected - normalize it
-    changesCount++;
+        // Multi-timestamp detected - normalize it
+        changesCount++;
 
-    // Extract lyrics text (everything after all timestamps)
-    const lastTimestamp = timestamps[timestamps.length - 1];
-    const lastTimestampIndex = line.lastIndexOf(lastTimestamp);
+        // Extract lyrics text (everything after all timestamps)
+        const lastTimestamp = timestamps[timestamps.length - 1];
+        const lastTimestampIndex = line.lastIndexOf(lastTimestamp);
 
-    const lyricsText = line.substring(
-      lastTimestampIndex + lastTimestamp.length,
-    );
+        const lyricsText = line.substring(lastTimestampIndex + lastTimestamp.length);
 
-    // Create separate line for each timestamp
-    timestamps.forEach((timestamp) => {
-      // Normalize milliseconds to 2 digits
-      const normalizedTimestamp = normalizeTimestamp(timestamp);
-      normalizedLines.push(`${normalizedTimestamp}${lyricsText}`);
-      expandedLinesCount++;
+        // Create separate line for each timestamp
+        timestamps.forEach((timestamp) => {
+            // Normalize milliseconds to 2 digits
+            const normalizedTimestamp = normalizeTimestamp(timestamp);
+            normalizedLines.push(`${normalizedTimestamp}${lyricsText}`);
+            expandedLinesCount++;
+        });
     });
-  });
 
-  const normalized = normalizedLines.join("\n");
+    const normalized = normalizedLines.join('\n');
 
-  // Extract plain lyrics from normalized content
-  const plainLyrics = extractPlainLyrics(normalized);
+    // Extract plain lyrics from normalized content
+    const plainLyrics = extractPlainLyrics(normalized);
 
-  return {
-    normalized,
-    plainLyrics,
-    changes: changesCount,
-    expandedLines: expandedLinesCount,
-  };
+    return {
+        normalized,
+        plainLyrics,
+        changes: changesCount,
+        expandedLines: expandedLinesCount
+    };
 }
 
 /**
  * Extract plain lyrics from synced lyrics
  */
 function extractPlainLyrics(syncedLyrics: string): string {
-  const lines = syncedLyrics.split("\n");
-  const plainLines: string[] = [];
+    const lines = syncedLyrics.split('\n');
+    const plainLines: string[] = [];
 
-  lines.forEach((line) => {
-    const trimmed = line.trim();
+    lines.forEach((line) => {
+        const trimmed = line.trim();
 
-    if (!trimmed) return;
+        if (!trimmed) return;
 
-    // Skip metadata
-    if (/^\[(ti|ar|al|length|offset):/i.test(trimmed)) return;
+        // Skip metadata
+        if (/^\[(ti|ar|al|length|offset):/i.test(trimmed)) return;
 
-    // Extract lyrics after timestamp
-    const match = trimmed.match(/^\[\d{2}:\d{2}\.\d{2,3}\](.*)$/);
+        // Extract lyrics after timestamp
+        const match = trimmed.match(/^\[\d{2}:\d{2}\.\d{2,3}\](.*)$/);
 
-    if (match) {
-      const lyrics = match[1].trim();
+        if (match) {
+            const lyrics = match[1].trim();
 
-      if (lyrics) {
-        plainLines.push(lyrics);
-      }
-    }
-  });
+            if (lyrics) {
+                plainLines.push(lyrics);
+            }
+        }
+    });
 
-  return plainLines.join("\n");
+    return plainLines.join('\n');
 }
 
 /**
@@ -133,21 +131,21 @@ function extractPlainLyrics(syncedLyrics: string): string {
  * Converts [mm:ss.xxx] to [mm:ss.xx]
  */
 function normalizeTimestamp(timestamp: string): string {
-  const match = timestamp.match(/\[(\d{2}):(\d{2})\.(\d{2,3})\]/);
+    const match = timestamp.match(/\[(\d{2}):(\d{2})\.(\d{2,3})\]/);
 
-  if (!match) return timestamp;
+    if (!match) return timestamp;
 
-  const [, minutes, seconds, milliseconds] = match;
+    const [, minutes, seconds, milliseconds] = match;
 
-  // Convert 3-digit ms to 2-digit
-  const ms =
-    milliseconds.length === 3
-      ? Math.round(parseInt(milliseconds) / 10)
-          .toString()
-          .padStart(2, "0")
-      : milliseconds.padStart(2, "0");
+    // Convert 3-digit ms to 2-digit
+    const ms =
+        milliseconds.length === 3
+            ? Math.round(parseInt(milliseconds) / 10)
+                  .toString()
+                  .padStart(2, '0')
+            : milliseconds.padStart(2, '0');
 
-  return `[${minutes}:${seconds}.${ms}]`;
+    return `[${minutes}:${seconds}.${ms}]`;
 }
 
 /**
@@ -155,62 +153,56 @@ function normalizeTimestamp(timestamp: string): string {
  * Useful after normalization to ensure proper ordering
  */
 export function sortLRCLines(content: string): string {
-  const lines = content.split("\n");
-  const metadataLines: string[] = [];
-  const timedLines: Array<{ timestamp: number; line: string }> = [];
-  const otherLines: string[] = [];
+    const lines = content.split('\n');
+    const metadataLines: string[] = [];
+    const timedLines: Array<{ timestamp: number; line: string }> = [];
+    const otherLines: string[] = [];
 
-  lines.forEach((line) => {
-    const trimmed = line.trim();
+    lines.forEach((line) => {
+        const trimmed = line.trim();
 
-    // Preserve metadata at top
-    if (/^\[(ti|ar|al|length|offset):/i.test(trimmed)) {
-      metadataLines.push(trimmed);
+        // Preserve metadata at top
+        if (/^\[(ti|ar|al|length|offset):/i.test(trimmed)) {
+            metadataLines.push(trimmed);
 
-      return;
-    }
+            return;
+        }
 
-    // Extract timestamp for sorting
-    const match = trimmed.match(/^\[(\d{2}):(\d{2})\.(\d{2,3})\]/);
+        // Extract timestamp for sorting
+        const match = trimmed.match(/^\[(\d{2}):(\d{2})\.(\d{2,3})\]/);
 
-    if (match) {
-      const [, minutes, seconds, milliseconds] = match;
+        if (match) {
+            const [, minutes, seconds, milliseconds] = match;
 
-      const timeInMs =
-        parseInt(minutes) * 60000 +
-        parseInt(seconds) * 1000 +
-        parseInt(milliseconds) * 10;
+            const timeInMs =
+                parseInt(minutes) * 60000 + parseInt(seconds) * 1000 + parseInt(milliseconds) * 10;
 
-      timedLines.push({ timestamp: timeInMs, line: trimmed });
-    } else if (trimmed) {
-      otherLines.push(trimmed);
-    }
-  });
+            timedLines.push({ timestamp: timeInMs, line: trimmed });
+        } else if (trimmed) {
+            otherLines.push(trimmed);
+        }
+    });
 
-  // Sort timed lines chronologically
-  timedLines.sort((a, b) => a.timestamp - b.timestamp);
+    // Sort timed lines chronologically
+    timedLines.sort((a, b) => a.timestamp - b.timestamp);
 
-  // Reassemble: metadata, then sorted timed lines, then other lines
-  return [
-    ...metadataLines,
-    ...timedLines.map((item) => item.line),
-    ...otherLines,
-  ].join("\n");
+    // Reassemble: metadata, then sorted timed lines, then other lines
+    return [...metadataLines, ...timedLines.map((item) => item.line), ...otherLines].join('\n');
 }
 
 /**
  * Full normalization pipeline: normalize + sort
  */
 export function normalizeAndSortLRC(content: string): NormalizationResult {
-  const normalizeResult = normalizeLRC(content);
-  const sorted = sortLRCLines(normalizeResult.normalized);
-  const plainLyrics = extractPlainLyrics(sorted);
+    const normalizeResult = normalizeLRC(content);
+    const sorted = sortLRCLines(normalizeResult.normalized);
+    const plainLyrics = extractPlainLyrics(sorted);
 
-  return {
-    ...normalizeResult,
-    normalized: sorted,
-    plainLyrics,
-  };
+    return {
+        ...normalizeResult,
+        normalized: sorted,
+        plainLyrics
+    };
 }
 
 /**
@@ -225,61 +217,61 @@ export function normalizeAndSortLRC(content: string): NormalizationResult {
  * @returns Stripped content with statistics
  */
 export function stripELRCWordTimestamps(content: string): ELRCStrippingResult {
-  const lines = content.split("\n");
-  const strippedLines: string[] = [];
-  let linesAffected = 0;
+    const lines = content.split('\n');
+    const strippedLines: string[] = [];
+    let linesAffected = 0;
 
-  lines.forEach((rawLine) => {
-    const line = rawLine.trim();
+    lines.forEach((rawLine) => {
+        const line = rawLine.trim();
 
-    // Preserve empty lines and metadata
-    if (!line || /^\[(ti|ar|al|length|offset):/i.test(line)) {
-      strippedLines.push(line);
+        // Preserve empty lines and metadata
+        if (!line || /^\[(ti|ar|al|length|offset):/i.test(line)) {
+            strippedLines.push(line);
 
-      return;
-    }
+            return;
+        }
 
-    // Check if line has ELRC word timestamps
-    const elrcPattern = /<\d{1,2}:\d{2}\.\d{2,3}>/g;
+        // Check if line has ELRC word timestamps
+        const elrcPattern = /<\d{1,2}:\d{2}\.\d{2,3}>/g;
 
-    if (elrcPattern.test(line)) {
-      linesAffected++;
+        if (elrcPattern.test(line)) {
+            linesAffected++;
 
-      // Remove all ELRC word timestamps and clean up extra whitespace
-      const stripped = line
-        .replace(/<\d{1,2}:\d{2}\.\d{2,3}>/g, "")
-        .replace(/\s+/g, " ")
-        .trim();
+            // Remove all ELRC word timestamps and clean up extra whitespace
+            const stripped = line
+                .replace(/<\d{1,2}:\d{2}\.\d{2,3}>/g, '')
+                .replace(/\s+/g, ' ')
+                .trim();
 
-      strippedLines.push(stripped);
-    } else {
-      strippedLines.push(line);
-    }
-  });
+            strippedLines.push(stripped);
+        } else {
+            strippedLines.push(line);
+        }
+    });
 
-  const stripped = strippedLines.join("\n");
+    const stripped = strippedLines.join('\n');
 
-  // Extract plain lyrics from the stripped content
-  const plainLines: string[] = [];
-  strippedLines.forEach((line) => {
-    if (!line) return;
+    // Extract plain lyrics from the stripped content
+    const plainLines: string[] = [];
+    strippedLines.forEach((line) => {
+        if (!line) return;
 
-    if (/^\[(ti|ar|al|length|offset):/i.test(line)) return;
+        if (/^\[(ti|ar|al|length|offset):/i.test(line)) return;
 
-    const match = line.match(/^\[\d{2}:\d{2}\.\d{2,3}\](.*)$/);
+        const match = line.match(/^\[\d{2}:\d{2}\.\d{2,3}\](.*)$/);
 
-    if (match) {
-      const lyrics = match[1].trim();
+        if (match) {
+            const lyrics = match[1].trim();
 
-      if (lyrics) {
-        plainLines.push(lyrics);
-      }
-    }
-  });
+            if (lyrics) {
+                plainLines.push(lyrics);
+            }
+        }
+    });
 
-  return {
-    stripped,
-    plainLyrics: plainLines.join("\n"),
-    linesAffected,
-  };
+    return {
+        stripped,
+        plainLyrics: plainLines.join('\n'),
+        linesAffected
+    };
 }

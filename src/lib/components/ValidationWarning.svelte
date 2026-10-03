@@ -1,9 +1,6 @@
 <script lang="ts">
-    import type { IssueType, LRCValidationResult } from "$lib/lrc/validator";
-    import {
-        getIssueTypeLabel,
-        getValidationSummary,
-    } from "$lib/lrc/validator";
+    import type { IssueType, LRCValidationResult } from '$lib/lrc/validator';
+    import { getIssueTypeLabel, getValidationSummary } from '$lib/lrc/validator';
 
     interface Props {
         validationResult: LRCValidationResult;
@@ -12,8 +9,7 @@
         onDismiss?: () => void;
     }
 
-    let { validationResult, onNormalize, onStripELRC, onDismiss }: Props =
-        $props();
+    let { validationResult, onNormalize, onStripELRC, onDismiss }: Props = $props();
 
     const summary = $derived(getValidationSummary(validationResult));
 
@@ -69,9 +65,7 @@
                     viewBox="0 0 24 24"
                     stroke-width="2"
                     stroke="currentColor"
-                    class="size-4 {hasErrors
-                        ? 'text-red-600'
-                        : 'text-amber-600'} shrink-0 mt-0.5"
+                    class="size-4 {hasErrors ? 'text-red-600' : 'text-amber-600'} shrink-0 mt-0.5"
                 >
                     {#if hasErrors}
                         <path
@@ -87,9 +81,7 @@
                         />
                     {/if}
                 </svg>
-                {hasErrors
-                    ? "LRC Format Errors Detected"
-                    : "LRC Format Issues Detected"}
+                {hasErrors ? 'LRC Format Errors Detected' : 'LRC Format Issues Detected'}
             </h4>
             {#if onDismiss}
                 <button
@@ -137,7 +129,7 @@
                         class="w-full px-3 py-2 flex items-center justify-between hover:bg-black/5 transition-colors"
                     >
                         <div class="flex items-center gap-2">
-                            {#if issues[0].severity === "error"}
+                            {#if issues[0].severity === 'error'}
                                 <span
                                     class="text-xs font-semibold text-red-700 bg-red-200 px-2 py-0.5 rounded"
                                     >ERROR</span
@@ -149,8 +141,7 @@
                                 >
                             {/if}
                             <span
-                                class="text-sm font-medium {issues[0]
-                                    .severity === 'error'
+                                class="text-sm font-medium {issues[0].severity === 'error'
                                     ? 'text-red-900'
                                     : 'text-amber-900'}"
                             >
@@ -162,7 +153,7 @@
                                     : 'text-amber-600'}"
                             >
                                 ({issues.length}
-                                {issues.length === 1 ? "line" : "lines"})
+                                {issues.length === 1 ? 'line' : 'lines'})
                             </span>
                         </div>
                         <svg
@@ -173,9 +164,7 @@
                             stroke="currentColor"
                             class="size-4 {issues[0].severity === 'error'
                                 ? 'text-red-600'
-                                : 'text-amber-600'} transition-transform {expandedTypes.has(
-                                type,
-                            )
+                                : 'text-amber-600'} transition-transform {expandedTypes.has(type)
                                 ? 'rotate-180'
                                 : ''}"
                         >
@@ -199,10 +188,9 @@
                                             >Line {issue.line}:</span
                                         >
                                         <span
-                                            class={issue.severity === "error"
-                                                ? "text-red-700"
-                                                : "text-amber-700"}
-                                            >{issue.message}</span
+                                            class={issue.severity === 'error'
+                                                ? 'text-red-700'
+                                                : 'text-amber-700'}>{issue.message}</span
                                         >
                                     </div>
                                     <code
@@ -249,13 +237,11 @@
                 <p class="font-medium mb-1">About Multi-timestamp Format:</p>
                 <p class="leading-relaxed">
                     Lines like <code
-                        class="{hasErrors
-                            ? 'bg-red-200'
-                            : 'bg-amber-200'} px-1 rounded"
+                        class="{hasErrors ? 'bg-red-200' : 'bg-amber-200'} px-1 rounded"
                         >[00:29.52][01:29.47] lyrics</code
                     >
-                    are non-standard and may cause compatibility issues in many players
-                    including Better Lyrics.
+                    are non-standard and may cause compatibility issues in many players including Better
+                    Lyrics.
                 </p>
             </div>
         {/if}
@@ -266,11 +252,9 @@
                 <p class="font-medium mb-1">About ELRC Word Timestamps:</p>
                 <p class="leading-relaxed">
                     Your lyrics contain ELRC word-level timestamps like <code
-                        class="bg-red-200 px-1 rounded"
-                        >&lt;00:12.34&gt;word</code
-                    >. LRCLIB does not officially support ELRC format. Use the
-                    auto-fix button to strip word timestamps while keeping line
-                    timestamps.
+                        class="bg-red-200 px-1 rounded">&lt;00:12.34&gt;word</code
+                    >. LRCLIB does not officially support ELRC format. Use the auto-fix button to
+                    strip word timestamps while keeping line timestamps.
                 </p>
             </div>
         {/if}

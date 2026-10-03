@@ -1,3 +1,3 @@
-export * from "./parser";
+export * from './parser';
 
-export * from "./validator";
+export * from './validator';

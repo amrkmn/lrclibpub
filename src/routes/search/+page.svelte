@@ -1,28 +1,24 @@
 <script lang="ts">
-    import { resolve } from "$app/paths";
-    import Footer from "$lib/components/Footer.svelte";
+    import { resolve } from '$app/paths';
+    import Footer from '$lib/components/Footer.svelte';
     import {
         ClockIcon,
         CopyIcon,
         DocumentIcon,
         DownloadIcon,
         EyeIcon,
-        SearchIcon,
-    } from "$lib/components/icons";
-    import {
-        downloadFile,
-        generateLRCContent,
-        sanitizeFilename,
-    } from "$lib/lrc/parser";
-    import type { LyricResult, SearchParams } from "$lib/types";
-    import { onMount } from "svelte";
+        SearchIcon
+    } from '$lib/components/icons';
+    import { downloadFile, generateLRCContent, sanitizeFilename } from '$lib/lrc/parser';
+    import type { LyricResult, SearchParams } from '$lib/types';
+    import { onMount } from 'svelte';
 
     // Search form state
     let searchParams = $state<SearchParams>({
-        q: "",
-        track_name: "",
-        artist_name: "",
-        album_name: "",
+        q: '',
+        track_name: '',
+        artist_name: '',
+        album_name: ''
     });
 
     // UI state
@@ -36,7 +32,7 @@
 
     let hasSearched = $state(false);
 
-    let searchMode = $state<"general" | "specific">("general");
+    let searchMode = $state<'general' | 'specific'>('general');
 
     let viewingLyrics = $state<LyricResult | null>(null);
 
@@ -44,7 +40,7 @@
 
     let copiedStates = $state<{ [key: string]: boolean }>({});
 
-    let activeTab = $state<"synced" | "plain" | "lyricsfile">("synced");
+    let activeTab = $state<'synced' | 'plain' | 'lyricsfile'>('synced');
 
     // Timeouts for notifications
     let errorTimeout: number;
@@ -84,11 +80,11 @@
         viewingLyrics = result;
 
         if (result.lyricsfile) {
-            activeTab = "lyricsfile";
+            activeTab = 'lyricsfile';
         } else if (result.syncedLyrics) {
-            activeTab = "synced";
+            activeTab = 'synced';
         } else if (result.plainLyrics) {
-            activeTab = "plain";
+            activeTab = 'plain';
         }
     }
 
@@ -102,11 +98,7 @@
     /**
      * Copy text to clipboard
      */
-    async function copyToClipboard(
-        text: string,
-        type: string,
-        buttonKey: string,
-    ) {
+    async function copyToClipboard(text: string, type: string, buttonKey: string) {
         try {
             await navigator.clipboard.writeText(text);
             setSuccess(`${type} copied to clipboard!`);
@@ -134,17 +126,17 @@
      */
     function resetForm() {
         searchParams = {
-            q: "",
-            track_name: "",
-            artist_name: "",
-            album_name: "",
+            q: '',
+            track_name: '',
+            artist_name: '',
+            album_name: ''
         };
         results = [];
         hasSearched = false;
         error = null;
         wasAutoSwitched = false;
         // Reset to general mode when resetting form
-        searchMode = "general";
+        searchMode = 'general';
     }
 
     /**
@@ -152,7 +144,7 @@
      */
     async function performSearch() {
         if (!searchParams.q && !searchParams.track_name) {
-            setError("Please provide either a search term or track name");
+            setError('Please provide either a search term or track name');
 
             return;
         }
@@ -164,39 +156,30 @@
             // Build query parameters
             const params = new URLSearchParams();
 
-            if (searchParams.q) params.append("q", searchParams.q);
+            if (searchParams.q) params.append('q', searchParams.q);
 
-            if (searchParams.track_name)
-                params.append("track_name", searchParams.track_name);
+            if (searchParams.track_name) params.append('track_name', searchParams.track_name);
 
-            if (searchParams.artist_name)
-                params.append("artist_name", searchParams.artist_name);
+            if (searchParams.artist_name) params.append('artist_name', searchParams.artist_name);
 
-            if (searchParams.album_name)
-                params.append("album_name", searchParams.album_name);
+            if (searchParams.album_name) params.append('album_name', searchParams.album_name);
 
             const response = await fetch(`/api/search?${params.toString()}`, {
-                method: "GET",
+                method: 'GET'
             });
 
             if (!response.ok) {
-                const errorData = await response
-                    .json()
-                    .catch(() => ({ message: "Search failed" }));
+                const errorData = await response.json().catch(() => ({ message: 'Search failed' }));
 
-                throw new Error(
-                    errorData.message || `Search failed: ${response.status}`,
-                );
+                throw new Error(errorData.message || `Search failed: ${response.status}`);
             }
 
             const data: LyricResult[] = await response.json();
             results = data;
             hasSearched = true;
         } catch (err) {
-            console.error("Search error:", err);
-            setError(
-                err instanceof Error ? err.message : "Failed to search lyrics",
-            );
+            console.error('Search error:', err);
+            setError(err instanceof Error ? err.message : 'Failed to search lyrics');
             results = [];
         } finally {
             isSearching = false;
@@ -215,11 +198,11 @@
      * Format duration from seconds to MM:SS
      */
     function formatDuration(duration?: number): string {
-        if (!duration) return "Unknown";
+        if (!duration) return 'Unknown';
         const minutes = Math.floor(duration / 60);
         const remainingSeconds = Math.floor(duration % 60);
 
-        return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+        return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
     }
 
     /**
@@ -228,46 +211,43 @@
     function downloadLRC(result: LyricResult) {
         const lrcContent = generateLRCContent(result);
         const filename = `${sanitizeFilename(result.artistName)} - ${sanitizeFilename(result.trackName)}.lrc`;
-        downloadFile(lrcContent, filename, "text/plain");
+        downloadFile(lrcContent, filename, 'text/plain');
         setSuccess(`Downloaded ${filename}`);
     }
 
     function downloadLyricsfile(result: LyricResult) {
         if (!result.lyricsfile) return;
         const filename = `${sanitizeFilename(result.artistName)} - ${sanitizeFilename(result.trackName)}.lrcf`;
-        downloadFile(result.lyricsfile, filename, "text/yaml");
+        downloadFile(result.lyricsfile, filename, 'text/yaml');
         setSuccess(`Downloaded ${filename}`);
     }
 
     // Reactive logic to auto-switch search mode
     $effect(() => {
         // Only auto-switch if user is in general mode and adds specific search criteria
-        if (
-            searchMode === "general" &&
-            (searchParams.artist_name || searchParams.album_name)
-        ) {
-            searchMode = "specific";
+        if (searchMode === 'general' && (searchParams.artist_name || searchParams.album_name)) {
+            searchMode = 'specific';
             wasAutoSwitched = true;
 
             // When auto-switching to specific, move q to track_name if track_name is empty
             if (!searchParams.track_name && searchParams.q) {
                 searchParams.track_name = searchParams.q;
-                searchParams.q = "";
+                searchParams.q = '';
             }
         } else if (
-            searchMode === "specific" &&
+            searchMode === 'specific' &&
             wasAutoSwitched &&
             !searchParams.artist_name &&
             !searchParams.album_name
         ) {
             // Auto-switch back to general if all specific criteria are cleared (but only if it was auto-switched)
-            searchMode = "general";
+            searchMode = 'general';
             wasAutoSwitched = false;
 
             // When auto-switching back to general, move track_name to q if q is empty
             if (!searchParams.q && searchParams.track_name) {
                 searchParams.q = searchParams.track_name;
-                searchParams.track_name = "";
+                searchParams.track_name = '';
             }
         }
     });
@@ -275,40 +255,38 @@
     // Prevent background scroll when modal is open
     $effect(() => {
         if (viewingLyrics) {
-            document.body.classList.add("overflow-hidden");
+            document.body.classList.add('overflow-hidden');
         } else {
-            document.body.classList.remove("overflow-hidden");
+            document.body.classList.remove('overflow-hidden');
         }
 
         // Cleanup on component destroy
         return () => {
-            document.body.classList.remove("overflow-hidden");
+            document.body.classList.remove('overflow-hidden');
         };
     });
 
     // Load search parameters from URL on mount
     onMount(() => {
         const urlParams = new URLSearchParams(window.location.search);
-        const qParam = urlParams.get("q");
-        const trackParam = urlParams.get("track");
-        const artistParam = urlParams.get("artist");
-        const albumParam = urlParams.get("album");
+        const qParam = urlParams.get('q');
+        const trackParam = urlParams.get('track');
+        const artistParam = urlParams.get('artist');
+        const albumParam = urlParams.get('album');
 
         if (qParam) {
             searchParams.q = decodeURIComponent(qParam);
-            searchMode = "general";
+            searchMode = 'general';
         }
 
         if (trackParam) {
             searchParams.track_name = decodeURIComponent(trackParam);
-            searchMode = "specific";
+            searchMode = 'specific';
         }
 
-        if (artistParam)
-            searchParams.artist_name = decodeURIComponent(artistParam);
+        if (artistParam) searchParams.artist_name = decodeURIComponent(artistParam);
 
-        if (albumParam)
-            searchParams.album_name = decodeURIComponent(albumParam);
+        if (albumParam) searchParams.album_name = decodeURIComponent(albumParam);
 
         // Auto-search if parameters are present
         if (qParam || trackParam) {
@@ -319,10 +297,7 @@
 
 <svelte:head>
     <title>Search Lyrics - LRCLIBpub</title>
-    <meta
-        name="description"
-        content="Search for lyrics in the LRCLIB database"
-    />
+    <meta name="description" content="Search for lyrics in the LRCLIB database" />
 </svelte:head>
 
 <div class="min-h-screen bg-[#E0E7FF] text-indigo-900 p-6">
@@ -336,7 +311,7 @@
                 Search Lyrics
             </h1>
             <a
-                href={resolve("/")}
+                href={resolve('/')}
                 class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
             >
                 <svg
@@ -366,8 +341,7 @@
                     rel="noopener noreferrer"
                     class="underline">LRCLIB</a
                 >
-                lyrics database to find synchronized and plain lyrics for your favorite
-                songs.
+                lyrics database to find synchronized and plain lyrics for your favorite songs.
             </p>
         </div>
 
@@ -379,23 +353,18 @@
             <!-- Search Mode Toggle -->
             <div class="mb-6">
                 <div class="flex items-center gap-4 mb-4">
-                    <span class="text-sm font-medium text-indigo-900"
-                        >Search Mode:</span
-                    >
+                    <span class="text-sm font-medium text-indigo-900">Search Mode:</span>
                     <div class="flex gap-2">
                         <button
                             type="button"
                             onclick={() => {
-                                searchMode = "general";
+                                searchMode = 'general';
                                 wasAutoSwitched = false;
                                 // When switching to general, move track_name to q if q is empty
-                                if (
-                                    !searchParams.q &&
-                                    searchParams.track_name
-                                ) {
+                                if (!searchParams.q && searchParams.track_name) {
                                     searchParams.q = searchParams.track_name;
                                 }
-                                searchParams.track_name = "";
+                                searchParams.track_name = '';
                             }}
                             class="px-3 py-1 text-sm rounded-md transition-colors cursor-pointer {searchMode ===
                             'general'
@@ -407,16 +376,13 @@
                         <button
                             type="button"
                             onclick={() => {
-                                searchMode = "specific";
+                                searchMode = 'specific';
                                 wasAutoSwitched = false;
                                 // When switching to specific, move q to track_name if track_name is empty
-                                if (
-                                    !searchParams.track_name &&
-                                    searchParams.q
-                                ) {
+                                if (!searchParams.track_name && searchParams.q) {
                                     searchParams.track_name = searchParams.q;
                                 }
-                                searchParams.q = "";
+                                searchParams.q = '';
                             }}
                             class="px-3 py-1 text-sm rounded-md transition-colors cursor-pointer {searchMode ===
                             'specific'
@@ -445,19 +411,17 @@
                                 d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"
                             />
                         </svg>
-                        Automatically switched to Specific Track mode because you
-                        added detailed search criteria.
+                        Automatically switched to Specific Track mode because you added detailed search
+                        criteria.
                     </div>
                 {/if}
             </div>
 
             <div class="space-y-4">
-                {#if searchMode === "general"}
+                {#if searchMode === 'general'}
                     <!-- General Search -->
                     <div>
-                        <label
-                            for="searchTerm"
-                            class="block text-sm font-medium mb-1"
+                        <label for="searchTerm" class="block text-sm font-medium mb-1"
                             >Search Term *</label
                         >
                         <input
@@ -472,9 +436,7 @@
                 {:else}
                     <!-- Specific Track Search -->
                     <div>
-                        <label
-                            for="trackName"
-                            class="block text-sm font-medium mb-1"
+                        <label for="trackName" class="block text-sm font-medium mb-1"
                             >Track Name *</label
                         >
                         <input
@@ -491,9 +453,7 @@
                 <!-- Optional Fields -->
                 <div class="grid md:grid-cols-2 gap-4">
                     <div>
-                        <label
-                            for="artistName"
-                            class="block text-sm font-medium mb-1"
+                        <label for="artistName" class="block text-sm font-medium mb-1"
                             >Artist Name</label
                         >
                         <input
@@ -505,9 +465,7 @@
                         />
                     </div>
                     <div>
-                        <label
-                            for="albumName"
-                            class="block text-sm font-medium mb-1"
+                        <label for="albumName" class="block text-sm font-medium mb-1"
                             >Album Name</label
                         >
                         <input
@@ -581,36 +539,24 @@
 
                 {#if results.length === 0}
                     <div class="p-8 text-center text-indigo-600">
-                        <SearchIcon
-                            size="size-12"
-                            className="mx-auto mb-4 text-indigo-400"
-                        />
+                        <SearchIcon size="size-12" className="mx-auto mb-4 text-indigo-400" />
                         <p class="text-lg mb-2">No lyrics found</p>
                         <p class="text-sm">
-                            Try adjusting your search terms or using different
-                            keywords.
+                            Try adjusting your search terms or using different keywords.
                         </p>
                     </div>
                 {:else}
                     <div class="divide-y divide-indigo-100">
                         {#each results as result (result.id)}
-                            <div
-                                class="p-6 hover:bg-indigo-50/50 transition-colors"
-                            >
+                            <div class="p-6 hover:bg-indigo-50/50 transition-colors">
                                 <!-- Track Info -->
-                                <div
-                                    class="flex justify-between items-start mb-3"
-                                >
+                                <div class="flex justify-between items-start mb-3">
                                     <div class="flex-1">
-                                        <h3
-                                            class="font-semibold text-lg text-indigo-900 mb-1"
-                                        >
+                                        <h3 class="font-semibold text-lg text-indigo-900 mb-1">
                                             {result.trackName}
                                         </h3>
                                         <p class="text-indigo-700">
-                                            <span class="font-medium"
-                                                >by {result.artistName}</span
-                                            >
+                                            <span class="font-medium">by {result.artistName}</span>
                                             {#if result.albumName}
                                                 <span class="text-indigo-500">
                                                     • {result.albumName}</span
@@ -620,14 +566,8 @@
                                         <div
                                             class="flex items-center gap-4 mt-2 text-sm text-indigo-600"
                                         >
-                                            <span
-                                                >Duration: {formatDuration(
-                                                    result.duration,
-                                                )}</span
-                                            >
-                                            <div
-                                                class="flex items-center gap-2 flex-wrap"
-                                            >
+                                            <span>Duration: {formatDuration(result.duration)}</span>
+                                            <div class="flex items-center gap-2 flex-wrap">
                                                 {#if result.instrumental}
                                                     <span
                                                         class="px-2 py-1 bg-orange-100 text-orange-700 rounded-md text-xs"
@@ -644,9 +584,7 @@
                                                         <span
                                                             class="px-2 py-1 bg-blue-100 text-blue-700 rounded-md text-xs flex items-center gap-1"
                                                         >
-                                                            <ClockIcon
-                                                                size="size-3"
-                                                            />
+                                                            <ClockIcon size="size-3" />
                                                             Synced
                                                         </span>
                                                     {/if}
@@ -654,9 +592,7 @@
                                                         <span
                                                             class="px-2 py-1 bg-purple-100 text-purple-700 rounded-md text-xs flex items-center gap-1"
                                                         >
-                                                            <DocumentIcon
-                                                                size="size-3"
-                                                            />
+                                                            <DocumentIcon size="size-3" />
                                                             Plain
                                                         </span>
                                                     {/if}
@@ -744,7 +680,7 @@
             if (e.target === e.currentTarget) closeLyricsViewer();
         }}
         onkeydown={(e: KeyboardEvent) => {
-            if (e.key === "Escape") closeLyricsViewer();
+            if (e.key === 'Escape') closeLyricsViewer();
         }}
     >
         <div
@@ -787,7 +723,7 @@
                 <div class="flex border-b border-indigo-200 bg-white">
                     {#if viewingLyrics.lyricsfile}
                         <button
-                            onclick={() => (activeTab = "lyricsfile")}
+                            onclick={() => (activeTab = 'lyricsfile')}
                             class="flex-1 px-4 py-3 text-sm font-medium transition-colors border-b-2 cursor-pointer {activeTab ===
                             'lyricsfile'
                                 ? 'text-indigo-600 border-indigo-600 bg-indigo-50'
@@ -801,7 +737,7 @@
                     {/if}
                     {#if viewingLyrics.syncedLyrics}
                         <button
-                            onclick={() => (activeTab = "synced")}
+                            onclick={() => (activeTab = 'synced')}
                             class="flex-1 px-4 py-3 text-sm font-medium transition-colors border-b-2 cursor-pointer {activeTab ===
                             'synced'
                                 ? 'text-indigo-600 border-indigo-600 bg-indigo-50'
@@ -815,7 +751,7 @@
                     {/if}
                     {#if viewingLyrics.plainLyrics}
                         <button
-                            onclick={() => (activeTab = "plain")}
+                            onclick={() => (activeTab = 'plain')}
                             class="flex-1 px-4 py-3 text-sm font-medium transition-colors border-b-2 cursor-pointer {activeTab ===
                             'plain'
                                 ? 'text-indigo-600 border-indigo-600 bg-indigo-50'
@@ -832,20 +768,29 @@
 
             <!-- Modal Content -->
             <div class="p-6 overflow-y-auto flex-1">
-                {#if activeTab === "lyricsfile" && viewingLyrics.lyricsfile}
+                {#if activeTab === 'lyricsfile' && viewingLyrics.lyricsfile}
                     <div>
                         <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-lg font-semibold text-indigo-900 flex items-center gap-2">
+                            <h3
+                                class="text-lg font-semibold text-indigo-900 flex items-center gap-2"
+                            >
                                 <DocumentIcon size="size-5" />
                                 Lyricsfile (YAML)
                             </h3>
                             <div class="flex gap-2">
                                 <button
-                                    onclick={() => copyToClipboard(viewingLyrics!.lyricsfile!, "Lyricsfile", `lyricsfile-${viewingLyrics!.id}`)}
+                                    onclick={() =>
+                                        copyToClipboard(
+                                            viewingLyrics!.lyricsfile!,
+                                            'Lyricsfile',
+                                            `lyricsfile-${viewingLyrics!.id}`
+                                        )}
                                     class="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-colors cursor-pointer"
                                 >
                                     <CopyIcon />
-                                    {copiedStates[`lyricsfile-${viewingLyrics!.id}`] ? "Copied" : "Copy"}
+                                    {copiedStates[`lyricsfile-${viewingLyrics!.id}`]
+                                        ? 'Copied'
+                                        : 'Copy'}
                                 </button>
                                 <button
                                     onclick={() => downloadLyricsfile(viewingLyrics!)}
@@ -857,9 +802,10 @@
                                 </button>
                             </div>
                         </div>
-                        <pre class="bg-indigo-50 p-4 rounded-lg border border-indigo-200 text-sm overflow-x-auto whitespace-pre-wrap text-indigo-900">{viewingLyrics.lyricsfile}</pre>
+                        <pre
+                            class="bg-indigo-50 p-4 rounded-lg border border-indigo-200 text-sm overflow-x-auto whitespace-pre-wrap text-indigo-900">{viewingLyrics.lyricsfile}</pre>
                     </div>
-                {:else if activeTab === "synced" && viewingLyrics.syncedLyrics}
+                {:else if activeTab === 'synced' && viewingLyrics.syncedLyrics}
                     <div>
                         <div class="flex items-center justify-between mb-4">
                             <h3
@@ -886,8 +832,8 @@
                                     onclick={() =>
                                         copyToClipboard(
                                             viewingLyrics!.syncedLyrics!,
-                                            "Synced lyrics",
-                                            `synced-${viewingLyrics!.id}`,
+                                            'Synced lyrics',
+                                            `synced-${viewingLyrics!.id}`
                                         )}
                                     class="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-colors cursor-pointer"
                                 >
@@ -906,8 +852,8 @@
                                         />
                                     </svg>
                                     {copiedStates[`synced-${viewingLyrics!.id}`]
-                                        ? "Copied"
-                                        : "Copy"}
+                                        ? 'Copied'
+                                        : 'Copy'}
                                 </button>
                                 <button
                                     onclick={() => downloadLRC(viewingLyrics!)}
@@ -936,7 +882,7 @@
                         <pre
                             class="bg-indigo-50 p-4 rounded-lg border border-indigo-200 text-sm overflow-x-auto whitespace-pre-wrap text-indigo-900">{viewingLyrics.syncedLyrics}</pre>
                     </div>
-                {:else if activeTab === "plain" && viewingLyrics.plainLyrics}
+                {:else if activeTab === 'plain' && viewingLyrics.plainLyrics}
                     <div>
                         <div class="flex items-center justify-between mb-4">
                             <h3
@@ -963,8 +909,8 @@
                                     onclick={() =>
                                         copyToClipboard(
                                             viewingLyrics!.plainLyrics!,
-                                            "Plain lyrics",
-                                            `plain-${viewingLyrics!.id}`,
+                                            'Plain lyrics',
+                                            `plain-${viewingLyrics!.id}`
                                         )}
                                     class="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-colors cursor-pointer"
                                 >
@@ -982,9 +928,7 @@
                                             d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184"
                                         />
                                     </svg>
-                                    {copiedStates[`plain-${viewingLyrics!.id}`]
-                                        ? "Copied"
-                                        : "Copy"}
+                                    {copiedStates[`plain-${viewingLyrics!.id}`] ? 'Copied' : 'Copy'}
                                 </button>
                                 <button
                                     onclick={() => downloadLRC(viewingLyrics!)}
@@ -1016,22 +960,39 @@
                 {:else if viewingLyrics.lyricsfile && !viewingLyrics.syncedLyrics && !viewingLyrics.plainLyrics}
                     <div>
                         <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-lg font-semibold text-indigo-900 flex items-center gap-2">
+                            <h3
+                                class="text-lg font-semibold text-indigo-900 flex items-center gap-2"
+                            >
                                 <DocumentIcon size="size-5" />
                                 Lyricsfile (YAML)
                             </h3>
                             <div class="flex gap-2">
-                                <button onclick={() => copyToClipboard(viewingLyrics!.lyricsfile!, "Lyricsfile", `lyricsfile-${viewingLyrics!.id}`)} class="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-colors cursor-pointer">
+                                <button
+                                    onclick={() =>
+                                        copyToClipboard(
+                                            viewingLyrics!.lyricsfile!,
+                                            'Lyricsfile',
+                                            `lyricsfile-${viewingLyrics!.id}`
+                                        )}
+                                    class="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-colors cursor-pointer"
+                                >
                                     <CopyIcon />
-                                    {copiedStates[`lyricsfile-${viewingLyrics!.id}`] ? "Copied" : "Copy"}
+                                    {copiedStates[`lyricsfile-${viewingLyrics!.id}`]
+                                        ? 'Copied'
+                                        : 'Copy'}
                                 </button>
-                                <button onclick={() => downloadLyricsfile(viewingLyrics!)} class="flex items-center gap-2 px-3 py-1.5 border border-indigo-600 text-indigo-600 bg-transparent rounded-md hover:bg-indigo-50 transition-colors cursor-pointer" title="Download lyricsfile YAML">
+                                <button
+                                    onclick={() => downloadLyricsfile(viewingLyrics!)}
+                                    class="flex items-center gap-2 px-3 py-1.5 border border-indigo-600 text-indigo-600 bg-transparent rounded-md hover:bg-indigo-50 transition-colors cursor-pointer"
+                                    title="Download lyricsfile YAML"
+                                >
                                     <DownloadIcon />
                                     Download
                                 </button>
                             </div>
                         </div>
-                        <pre class="bg-indigo-50 p-4 rounded-lg border border-indigo-200 text-sm overflow-x-auto whitespace-pre-wrap text-indigo-900">{viewingLyrics.lyricsfile}</pre>
+                        <pre
+                            class="bg-indigo-50 p-4 rounded-lg border border-indigo-200 text-sm overflow-x-auto whitespace-pre-wrap text-indigo-900">{viewingLyrics.lyricsfile}</pre>
                     </div>
                 {:else if viewingLyrics.plainLyrics && !viewingLyrics.syncedLyrics && !viewingLyrics.lyricsfile}
                     <!-- Only plain lyrics available -->
@@ -1048,15 +1009,13 @@
                                     onclick={() =>
                                         copyToClipboard(
                                             viewingLyrics!.plainLyrics!,
-                                            "Plain lyrics",
-                                            `plain-${viewingLyrics!.id}`,
+                                            'Plain lyrics',
+                                            `plain-${viewingLyrics!.id}`
                                         )}
                                     class="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-colors cursor-pointer"
                                 >
                                     <CopyIcon />
-                                    {copiedStates[`plain-${viewingLyrics!.id}`]
-                                        ? "Copied"
-                                        : "Copy"}
+                                    {copiedStates[`plain-${viewingLyrics!.id}`] ? 'Copied' : 'Copy'}
                                 </button>
                                 <button
                                     onclick={() => downloadLRC(viewingLyrics!)}
@@ -1090,9 +1049,7 @@
                             />
                         </svg>
                         <p class="text-lg mb-2">No lyrics available</p>
-                        <p class="text-sm">
-                            This track doesn't have any lyrics in the database.
-                        </p>
+                        <p class="text-sm">This track doesn't have any lyrics in the database.</p>
                     </div>
                 {/if}
             </div>
