@@ -13,14 +13,18 @@ export function parseLRCFile(content: string): ParsedLRC {
   const syncedLines: string[] = [];
   const plainLines: string[] = [];
   let duration = "";
+  // Latest lyric timestamp (seconds), used as a duration fallback when no
+  // usable [length:] tag is present.
+  let lastTimestampSec = 0;
 
   lines.forEach((line) => {
     line = line.replace(/\r$/, "").trim();
     if (!line) return;
 
-    // Parse length
+    // Parse length. The fractional part is optional: both [length:02:07]
+    // (which our own generator writes) and [length:02:07.00] are accepted.
     const lengthMatch = line.match(
-      /^\[length:\s*(\d{2}):(\d{2})\.(\d{2,3})\]$/,
+      /^\[length:\s*(\d{1,3}):(\d{1,2})(?:\.(\d{1,3}))?\]$/,
     );
     if (lengthMatch) {
       const [, minutes, seconds] = lengthMatch;
@@ -48,10 +52,22 @@ export function parseLRCFile(content: string): ParsedLRC {
               .padStart(2, "0")
           : milliseconds;
 
+      const stamp =
+        parseInt(minutes) * 60 +
+        parseInt(seconds) +
+        parseInt(milliseconds) / (milliseconds.length === 3 ? 1000 : 100);
+      if (stamp > lastTimestampSec) lastTimestampSec = stamp;
+
       syncedLines.push(`[${minutes}:${seconds}.${ms}]${lyrics}`);
       plainLines.push(lyrics.trim());
     }
   });
+
+  // Fallback: no usable [length:] tag — estimate from the last lyric
+  // timestamp plus a small tail allowance.
+  if (!duration && lastTimestampSec > 0) {
+    duration = (Math.ceil(lastTimestampSec) + 5).toString();
+  }
 
   return {
     title: metadata["ti"],
