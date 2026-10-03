@@ -25,9 +25,7 @@
 
     // UI state variables
     let isSubmitting = $state(false);
-
     let error = $state<string | null>(null);
-
     let success = $state(false);
 
     let solveProgress = $state({
@@ -39,12 +37,10 @@
     });
 
     let solveTime = $state(0);
-
     let solveAttempts = $state(0);
 
     // Timeouts for notifications
     let errorTimeout: number;
-
     let successTimeout: number;
 
     // Active solve; cancelled on unmount so workers don't leak.

@@ -23,7 +23,6 @@ export interface ActiveSolve {
 
 // PoW pins a core per worker; more than 8 costs more UX than it gains.
 const MAX_WORKERS = 8;
-
 let jobSeq = 0;
 
 export function startSolve(

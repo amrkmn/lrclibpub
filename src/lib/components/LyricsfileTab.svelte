@@ -20,9 +20,7 @@
     } = $props();
 
     let validation = $state<LyricsfileValidationResult | null>(null);
-
     let showWarning = $state(false);
-
     let dismissed = $state(false);
 
     // Boundary decoders for the untrusted YAML-derived payload.

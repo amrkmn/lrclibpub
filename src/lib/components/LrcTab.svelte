@@ -21,9 +21,7 @@
     } = $props();
 
     let validationResult = $state<LRCValidationResult | null>(null);
-
     let showValidationWarning = $state(false);
-
     let validationDismissed = $state(false);
 
     function runValidation() {

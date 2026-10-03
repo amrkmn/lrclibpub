@@ -12,11 +12,8 @@
     let { validationResult, onNormalize, onStripELRC, onDismiss }: Props = $props();
 
     const summary = $derived(getValidationSummary(validationResult));
-
     const showNormalizeButton = $derived(validationResult.hasMultiTimestamps);
-
     const showStripELRCButton = $derived(validationResult.hasELRC);
-
     const hasErrors = $derived(validationResult.hasErrors);
 
     // Group issues by type

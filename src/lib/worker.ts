@@ -5,9 +5,7 @@
 
 // Fixed offsets: inputs are tiny, so no allocator is needed.
 const PREFIX_OFFSET = 0;
-
 const TARGET_OFFSET = 512;
-
 const MAX_PREFIX_BYTES = 44;
 
 const TARGET_HEX_RE = /^[0-9a-fA-F]{64}$/;
@@ -42,16 +40,12 @@ function hasSolverExports(v: unknown): v is WasmSolverExports {
 
 // Per-solve progress state, reset on every message.
 let activeJobId: number | null = null;
-
 let lastReportedHashes = 0;
-
 let lastProgressTime = 0;
 
 // Nonces run start + k*stride, so hashes tried = (nonce - start) / stride.
 let jobStartNonce = 0;
-
 let jobStride = 1;
-
 let wasmPromise: Promise<WebAssembly.Instance> | null = null;
 
 async function getInstance(): Promise<WebAssembly.Instance> {
@@ -141,7 +135,6 @@ self.onmessage = async (e: MessageEvent) => {
         }
 
         const exports = instance.exports;
-
         const memory = exports.memory;
 
         if (

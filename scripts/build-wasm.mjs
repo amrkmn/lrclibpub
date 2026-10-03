@@ -8,9 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
 const execFileAsync = promisify(execFile);
-
 const __filename = fileURLToPath(import.meta.url);
-
 const __dirname = dirname(__filename);
 
 try {

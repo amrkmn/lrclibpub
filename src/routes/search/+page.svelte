@@ -23,19 +23,12 @@
 
     // UI state
     let isSearching = $state(false);
-
     let error = $state<string | null>(null);
-
     let success = $state<string | null>(null);
-
     let results = $state<LyricResult[]>([]);
-
     let hasSearched = $state(false);
-
     let searchMode = $state<'general' | 'specific'>('general');
-
     let viewingLyrics = $state<LyricResult | null>(null);
-
     let wasAutoSwitched = $state(false);
 
     let copiedStates = $state<{ [key: string]: boolean }>({});
@@ -44,7 +37,6 @@
 
     // Timeouts for notifications
     let errorTimeout: number;
-
     let successTimeout: number;
 
     let copyTimeouts: { [key: string]: number } = {};

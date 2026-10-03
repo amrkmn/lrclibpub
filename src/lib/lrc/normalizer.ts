@@ -71,7 +71,6 @@ export function normalizeLRC(content: string): NormalizationResult {
         // Extract lyrics text (everything after all timestamps)
         const lastTimestamp = timestamps[timestamps.length - 1];
         const lastTimestampIndex = line.lastIndexOf(lastTimestamp);
-
         const lyricsText = line.substring(lastTimestampIndex + lastTimestamp.length);
 
         // Create separate line for each timestamp
