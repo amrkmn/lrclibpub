@@ -1,153 +1,176 @@
-let wasmModule: WebAssembly.WebAssemblyInstantiatedSource | null = null;
-let lastUpdate = Date.now();
-let startTime = Date.now();
+// PoW solver worker — reusable across submits, striding-capable.
+//
+// Protocol (main -> worker): { jobId, prefix, target, startNonce?, stride? }
+// Protocol (worker -> main): { type: "progress", jobId, attempts, rate }
+//                            { type: "success", jobId, nonce, totalTime }
+//                            { type: "error", jobId, error }
+//
+// The exported solveChallenge returns u64; the u64-max error sentinel reads
+// back as signed i64, so any negative BigInt means failure. Nonce 0 is valid.
 
-async function initWasm() {
-  if (!wasmModule) {
-    const wasmResponse = await fetch(
-      new URL("./wasm/solver.wasm", import.meta.url),
-    );
-    const wasmBytes = await wasmResponse.arrayBuffer();
+// Fixed linear-memory layout: inputs are tiny (prefix <= 44 bytes,
+// target hex = 64 bytes), so fixed offsets replace the old bump allocator.
+const PREFIX_OFFSET = 0;
+const TARGET_OFFSET = 512;
+const MAX_PREFIX_BYTES = 44;
+const TARGET_HEX_RE = /^[0-9a-fA-F]{64}$/;
 
-    const importObject = {
-      env: {
-        print: (value: number) => {
-          // Track progress more efficiently
-          const now = Date.now();
-          const elapsed = now - startTime;
-          const rate = value / (elapsed / 1000);
+// Progress state for the currently running solve (reset per message).
+let activeJobId: number | null = null;
+let lastReportedHashes = 0;
+let lastProgressTime = 0;
+// Nonce space partition for this job: nonces are start + k*stride, so
+// (nonce - start) / stride == hashes tried. Rate math must use hashes,
+// not raw nonce deltas (which overstate throughput by stride-x).
+let jobStartNonce = 0;
+let jobStride = 1;
 
-          if (now - lastUpdate >= 300) {
-            self.postMessage({
-              type: "progress",
-              attempts: value,
-              time: now,
-              rate: Math.round(rate),
-              elapsed: elapsed,
-            });
-            lastUpdate = now;
-          }
+let wasmPromise: Promise<WebAssembly.Instance> | null = null;
+
+async function getInstance(): Promise<WebAssembly.Instance> {
+  if (!wasmPromise) {
+    wasmPromise = (async () => {
+      const url = new URL("./wasm/solver.wasm", import.meta.url);
+      const importObject: WebAssembly.Imports = {
+        env: {
+          // Zig calls this at most once per 10k hashes with the absolute
+          // nonce. Convert to hashes tried before diffing; throttle to ~300ms.
+          print: (value: number) => {
+            const now = Date.now();
+            const elapsed = (now - lastProgressTime) / 1000;
+            if (elapsed >= 0.3) {
+              const hashes = (value - jobStartNonce) / jobStride;
+              const delta = hashes - lastReportedHashes;
+              self.postMessage({
+                type: "progress",
+                jobId: activeJobId,
+                attempts: hashes,
+                rate: elapsed > 0 ? Math.round(delta / elapsed) : 0,
+              });
+              lastProgressTime = now;
+              lastReportedHashes = hashes;
+            }
+          },
         },
-      },
-    };
+      };
 
-    wasmModule = await WebAssembly.instantiate(wasmBytes, importObject);
+      // Streaming compile is faster (compiles during download) but needs
+      // the server to serve application/wasm. Fall back to buffered
+      // instantiate on any failure (e.g. wrong MIME).
+      try {
+        if (typeof WebAssembly.instantiateStreaming === "function") {
+          const streaming = await WebAssembly.instantiateStreaming(
+            fetch(url),
+            importObject,
+          );
+          return streaming.instance;
+        }
+      } catch {
+        // fall through to buffered path
+      }
+      const bytes = await (await fetch(url)).arrayBuffer();
+      return (await WebAssembly.instantiate(bytes, importObject)).instance;
+    })();
   }
+  return wasmPromise;
 }
 
-// Helper function to safely get memory view
-function getMemoryView(memory: WebAssembly.Memory): Uint8Array {
-  return new Uint8Array(memory.buffer);
-}
-
-// Track memory allocations for better management
-let nextMemoryOffset = 0;
-let memoryReserveSize = 1024; // Reserve 1KB for WASM internal use
-
-// Helper function to allocate memory in WASM
-function allocateInWasm(exports: any, size: number): number {
-  const memory = exports.memory as WebAssembly.Memory;
-  const totalMemory = memory.buffer.byteLength;
-
-  // Initialize offset if this is the first allocation
-  if (nextMemoryOffset === 0)
-    // Start allocations at 80% of memory to avoid conflicts with WASM stack/heap
-    nextMemoryOffset = Math.floor(totalMemory * 0.8);
-
-  // Ensure size is at least 1 byte
-  const bytesToAllocate = Math.max(1, size);
-
-  // Check if we have enough space left
-  if (nextMemoryOffset + bytesToAllocate + memoryReserveSize > totalMemory)
-    // Could grow memory here if needed using memory.grow()
-    console.warn("Warning: Running low on WASM memory");
-
-  // Save the current offset for returning to caller
-  const allocatedOffset = nextMemoryOffset;
-
-  // Move the offset forward for the next allocation (with 8-byte alignment)
-  nextMemoryOffset += Math.ceil(bytesToAllocate / 8) * 8;
-
-  return allocatedOffset;
-}
-
-self.onmessage = async (e) => {
-  const { prefix, target } = e.data;
-  startTime = Date.now();
-  lastUpdate = startTime;
+self.onmessage = async (e: MessageEvent) => {
+  const { jobId, prefix, target, startNonce = 0, stride = 1 } = e.data;
+  activeJobId = jobId ?? null;
+  lastReportedHashes = 0;
+  lastProgressTime = Date.now();
+  jobStartNonce = Number(startNonce);
+  jobStride = Number(stride) || 1;
+  const startTime = Date.now();
 
   try {
-    await initWasm();
-
-    if (!wasmModule) {
-      throw new Error("WASM module not initialized");
+    if (
+      typeof prefix !== "string" ||
+      typeof target !== "string" ||
+      prefix.length === 0 ||
+      target.length === 0
+    ) {
+      throw new Error("Invalid challenge: prefix and target are required");
     }
 
-    const instance = wasmModule.instance;
-    const exports = instance.exports as any;
-
-    // Validate required exports
-    const requiredExports = ["solveChallenge", "memory"];
-    for (const exportName of requiredExports) {
-      if (!exports[exportName]) {
-        throw new Error(
-          `Required WASM export '${exportName}' not found. Available: ${Object.keys(exports).join(", ")}`,
-        );
-      }
-    }
-
-    // Encode strings to bytes
     const prefixBytes = new TextEncoder().encode(prefix);
     const targetBytes = new TextEncoder().encode(target);
 
-    const memory = exports.memory as WebAssembly.Memory;
-
-    // Allocate memory safely
-    const prefixOffset = allocateInWasm(exports, prefixBytes.length);
-    const targetOffset = prefixOffset + prefixBytes.length + 64; // Add padding
-
-    // Get fresh memory view each time
-    let memoryView = getMemoryView(memory);
-
-    // Write data to allocated memory
-    memoryView.set(prefixBytes, prefixOffset);
-    memoryView.set(targetBytes, targetOffset);
-
-    console.log(`Starting challenge: prefix="${prefix}", target="${target}"`);
-    console.log(
-      `Memory allocated - prefix: ${prefixOffset}, target: ${targetOffset}`,
-    );
-
-    // Call the solveChallenge function - now returns the nonce value directly
-    const nonceValue = exports.solveChallenge(
-      prefixOffset,
-      prefixBytes.length,
-      targetOffset,
-      targetBytes.length,
-    );
-
-    if (nonceValue === 0) {
-      throw new Error("WASM solveChallenge returned 0 (error)");
+    if (prefixBytes.length > MAX_PREFIX_BYTES) {
+      throw new Error(
+        `Prefix too long (${prefixBytes.length} bytes, max ${MAX_PREFIX_BYTES})`,
+      );
+    }
+    if (!TARGET_HEX_RE.test(target)) {
+      throw new Error("Invalid target: expected 64 hex characters");
     }
 
-    // Convert the numeric nonce to a string
-    const nonce = nonceValue.toString();
+    const instance = await getInstance();
+    const exports = instance.exports as unknown as {
+      solveChallenge: (
+        prefixOffset: number,
+        prefixLen: number,
+        targetOffset: number,
+        targetLen: number,
+        start: bigint,
+        step: bigint,
+      ) => bigint;
+      memory: WebAssembly.Memory;
+    };
 
+    if (typeof exports.solveChallenge !== "function" || !exports.memory) {
+      throw new Error(
+        `Required WASM exports missing. Available: ${Object.keys(exports).join(", ")}`,
+      );
+    }
+
+    const memory = exports.memory;
+    if (
+      PREFIX_OFFSET + prefixBytes.length > memory.buffer.byteLength ||
+      TARGET_OFFSET + targetBytes.length > memory.buffer.byteLength
+    ) {
+      throw new Error("Challenge does not fit in WASM linear memory");
+    }
+
+    // Fresh view per solve (safe against any future memory.grow detach).
+    const memoryView = new Uint8Array(memory.buffer);
+    memoryView.set(prefixBytes, PREFIX_OFFSET);
+    memoryView.set(targetBytes, TARGET_OFFSET);
+
+    console.log(
+      `Starting challenge: prefix="${prefix}", start=${startNonce}, stride=${stride}`,
+    );
+
+    const raw = exports.solveChallenge(
+      PREFIX_OFFSET,
+      prefixBytes.length,
+      TARGET_OFFSET,
+      targetBytes.length,
+      BigInt(startNonce),
+      BigInt(stride),
+    );
+
+    // u64-max sentinel arrives as signed -1n; any negative is failure.
+    // (Nonce 0 is a legitimate solution and must NOT be treated as error.)
+    if (raw < 0n) {
+      throw new Error("Solver rejected the challenge (invalid input)");
+    }
+
+    const nonce = raw.toString();
     const totalTime = Date.now() - startTime;
     console.log(`Challenge solved! Nonce: ${nonce}, Time: ${totalTime}ms`);
 
     self.postMessage({
       type: "success",
+      jobId,
       nonce,
       totalTime,
-      finalAttempts: Number(nonceValue) + 1, // Use the numeric value directly
+      attempts: (Number(raw) - jobStartNonce) / jobStride,
     });
   } catch (err) {
     const error = err instanceof Error ? err.message : "Unknown error";
     console.error("Worker error:", error);
-    self.postMessage({
-      type: "error",
-      error,
-    });
+    self.postMessage({ type: "error", jobId, error });
   }
 };

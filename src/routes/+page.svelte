@@ -4,9 +4,10 @@
     import LrcTab from "$lib/components/LrcTab.svelte";
     import LyricsfileTab from "$lib/components/LyricsfileTab.svelte";
     import { validateLyricsfileYaml } from "$lib/lyricsfile/validator";
+    import { type ActiveSolve, startSolve } from "$lib/solver-pool";
     import type { Challenge, FormData } from "$lib/types";
     import { numify } from "numify";
-    import { onMount } from "svelte";
+    import { onDestroy, onMount } from "svelte";
 
     // Initialize form data with default values
     let formData = $state<FormData>({
@@ -31,15 +32,18 @@
         nonce: 0,
         startTime: 0,
         rate: 0,
+        workers: 0,
     });
     let solveTime = $state(0);
     let solveAttempts = $state(0);
 
-
-
     // Timeouts for notifications
     let errorTimeout: number;
     let successTimeout: number;
+
+    // Active PoW solve (cancelled on unmount to avoid leaking workers).
+    let activeSolve: ActiveSolve | null = null;
+    onDestroy(() => activeSolve?.cancel());
 
     /**
      * Set an error message with auto-dismiss after 5 seconds
@@ -60,7 +64,13 @@
         if (successTimeout) clearTimeout(successTimeout);
         successTimeout = setTimeout(() => {
             success = false;
-            solveProgress = { attempts: 0, nonce: 0, startTime: 0, rate: 0 };
+            solveProgress = {
+                attempts: 0,
+                nonce: 0,
+                startTime: 0,
+                rate: 0,
+                workers: 0,
+            };
         }, 5000) as unknown as number;
     }
 
@@ -133,7 +143,6 @@
      */
     async function handleSubmit(event: Event) {
         event.preventDefault();
-        let worker: Worker | null = null;
 
         try {
             // Reset state
@@ -156,13 +165,20 @@
                     setError("Lyricsfile content is required");
                     return;
                 }
-                const lfVal = validateLyricsfileYaml(formData.lyricsfile.trim());
+                const lfVal = validateLyricsfileYaml(
+                    formData.lyricsfile.trim(),
+                );
                 if (lfVal.hasErrors) {
-                    setError("Please fix Lyricsfile validation errors before publishing");
+                    setError(
+                        "Please fix Lyricsfile validation errors before publishing",
+                    );
                     return;
                 }
             } else {
-                if (!formData.plainLyrics.trim() && !formData.syncedLyrics.trim()) {
+                if (
+                    !formData.plainLyrics.trim() &&
+                    !formData.syncedLyrics.trim()
+                ) {
                     if (
                         !confirm(
                             "No lyrics provided. Is this an instrumental track?",
@@ -185,49 +201,29 @@
                 nonce: 0,
                 startTime: Date.now(),
                 rate: 0,
+                workers: 0,
             };
 
-            worker = new Worker(new URL("../lib/worker.ts", import.meta.url), {
-                type: "module",
-            });
-
-            // Process the challenge with WebWorker
-            const nonce = await new Promise<string>((resolve, reject) => {
-                if (!worker) return;
-
-                worker.onmessage = (e) => {
-                    const {
-                        type,
-                        attempts,
+            // Solve the challenge with a strided worker pool (one worker
+            // per core, first solution wins).
+            activeSolve = startSolve(
+                challenge.prefix,
+                challenge.target,
+                ({ attempts, rate, workers }) => {
+                    solveProgress = {
                         rate,
-                        nonce,
-                        error,
-                        finalAttempts,
-                        totalTime,
-                    } = e.data;
+                        attempts,
+                        nonce: 0,
+                        startTime: solveProgress.startTime || Date.now(),
+                        workers,
+                    };
+                },
+            );
 
-                    if (type === "progress") {
-                        solveProgress = {
-                            rate,
-                            attempts,
-                            nonce: 0,
-                            startTime: solveProgress.startTime || Date.now(),
-                        };
-                    } else if (type === "success") {
-                        // Calculate solve time
-                        solveTime = totalTime;
-                        solveAttempts = finalAttempts;
-                        resolve(nonce);
-                    } else if (type === "error") {
-                        reject(new Error(error));
-                    }
-                };
-
-                worker.postMessage({
-                    prefix: challenge.prefix,
-                    target: challenge.target,
-                });
-            });
+            const { nonce, attempts, totalTime } = await activeSolve.promise;
+            activeSolve = null;
+            solveTime = totalTime;
+            solveAttempts = attempts;
 
             const publishToken = `${challenge.prefix}:${nonce}`;
 
@@ -274,11 +270,8 @@
             );
         } finally {
             isSubmitting = false;
-            // Clean up worker
-            if (worker) {
-                worker.terminate();
-                worker = null;
-            }
+            // Pool workers are terminated on settle; drop the handle.
+            activeSolve = null;
         }
     }
 
@@ -451,9 +444,9 @@
                                                 ).toFixed(1)}s</span
                                             >
                                             <span>•</span>
-                                            <span
-                                                >{numify(solveProgress.rate)} hashes/s</span
-                                            >
+                                            <span>
+                                                {numify(solveProgress.rate)} hashes/s{#if solveProgress.workers > 1}{" · "}{solveProgress.workers} workers{/if}
+                                            </span>
                                             <span>•</span>
                                             <span
                                                 >Attempts: {solveProgress.attempts}</span
@@ -544,7 +537,8 @@
                     <button
                         type="button"
                         onclick={() => (activeFormat = "lrc")}
-                        class="px-4 py-2 rounded-md text-sm font-medium border {activeFormat === 'lrc'
+                        class="px-4 py-2 rounded-md text-sm font-medium border {activeFormat ===
+                        'lrc'
                             ? 'bg-indigo-600 text-white border-indigo-600'
                             : 'bg-white text-indigo-700 border-indigo-200 hover:bg-indigo-50'}"
                     >
@@ -553,7 +547,8 @@
                     <button
                         type="button"
                         onclick={() => (activeFormat = "lyricsfile")}
-                        class="px-4 py-2 rounded-md text-sm font-medium border {activeFormat === 'lyricsfile'
+                        class="px-4 py-2 rounded-md text-sm font-medium border {activeFormat ===
+                        'lyricsfile'
                             ? 'bg-indigo-600 text-white border-indigo-600'
                             : 'bg-white text-indigo-700 border-indigo-200 hover:bg-indigo-50'}"
                     >
@@ -562,7 +557,9 @@
                 </div>
 
                 <!-- Lyrics input — tab content -->
-                <div class="p-4 border border-dashed border-indigo-300 rounded-lg bg-indigo-50/50">
+                <div
+                    class="p-4 border border-dashed border-indigo-300 rounded-lg bg-indigo-50/50"
+                >
                     {#if activeFormat === "lrc"}
                         <LrcTab
                             bind:plainLyrics={formData.plainLyrics}

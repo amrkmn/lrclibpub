@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
 import { execFile } from "node:child_process";
-import { copyFileSync, existsSync, mkdirSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { copyFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
@@ -21,7 +22,7 @@ try {
   try {
     const { stdout } = await execFileAsync("zig", ["version"]);
     console.log(`ℹ️  Zig version: ${stdout.trim()}`);
-  } catch (error) {
+  } catch {
     throw new Error(
       "Zig is not installed or not in PATH. Please install Zig from https://ziglang.org/",
     );
@@ -39,6 +40,11 @@ try {
   console.log("⚡ Running zig build...");
   await execFileAsync("zig", ["build"], { cwd: solverDir });
 
+  // Smoke-test the freshly built module before shipping it
+  console.log("🧪 Running solver smoke test...");
+  await execFileAsync("node", ["smoke-test.mjs"], { cwd: solverDir });
+  console.log("✅ Smoke test passed");
+
   // Copy the built WASM file
   const srcPath = join(solverDir, "zig-out", "bin", "solver.wasm");
   const destDir = join(projectRoot, "src", "lib", "wasm");
@@ -54,6 +60,12 @@ try {
   // Copy file
   console.log(`📦 Copying WASM file to: ${destPath}`);
   copyFileSync(srcPath, destPath);
+
+  const bytes = readFileSync(destPath);
+  const sha = createHash("sha256").update(bytes).digest("hex");
+  console.log(
+    `📏 solver.wasm: ${bytes.length} bytes (${(bytes.length / 1024).toFixed(1)} KiB), sha256: ${sha.slice(0, 16)}…`,
+  );
 
   console.log("✅ WASM build completed successfully!");
 } catch (error) {

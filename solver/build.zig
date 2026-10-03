@@ -16,15 +16,17 @@ pub fn build(b: *std.Build) void {
         }),
     });
 
-    if (builtin.zig_version.major == 0 and builtin.zig_version.minor < 16) {
-        @compileError("Building requires Zig 0.16.0 or later");
+    if (builtin.zig_version.major == 0 and builtin.zig_version.minor < 17) {
+        @compileError("Building requires Zig 0.17.0 or later");
     }
 
     // Set entry to disabled for WebAssembly library
     wasm_lib.entry = .disabled;
 
     // Set initial memory and enable memory export
-    wasm_lib.initial_memory = 2 * 1024 * 1024; // 2MB initial memory
+    // wasm-ld needs ~1MB of static segments (std tables, panic paths), so
+    // the floor is 17 pages; 20 gives headroom. max_memory is an unused cap.
+    wasm_lib.initial_memory = 20 * 64 * 1024; // 20 pages (~1.25MB)
     wasm_lib.max_memory = 16 * 1024 * 1024; // 16MB max memory
     wasm_lib.export_memory = true;
 
