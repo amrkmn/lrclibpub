@@ -3,6 +3,7 @@
     import Footer from '$lib/components/Footer.svelte';
     import LrcTab from '$lib/components/LrcTab.svelte';
     import LyricsfileTab from '$lib/components/LyricsfileTab.svelte';
+    import { validateSyncedLyrics } from '$lib/lrc/validator';
     import { validateLyricsfileYaml } from '$lib/lyricsfile/validator';
     import { type ActiveSolve, startSolve } from '$lib/solver-pool';
     import type { Challenge, FormData } from '$lib/types';
@@ -203,6 +204,16 @@
                         setError(
                             'Please provide lyrics or confirm if this is an instrumental track'
                         );
+
+                        return;
+                    }
+                }
+
+                if (formData.syncedLyrics.trim()) {
+                    const lrcVal = validateSyncedLyrics(formData.syncedLyrics.trim());
+
+                    if (lrcVal.hasErrors) {
+                        setError('Please fix LRC validation errors before publishing');
 
                         return;
                     }
