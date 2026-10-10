@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-import { execFile } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { copyFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
+import { chmodSync, copyFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
@@ -10,6 +10,29 @@ import { promisify } from 'node:util';
 const execFileAsync = promisify(execFile);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+function run(command, args, options) {
+    return new Promise((resolve, reject) => {
+        const child = spawn(command, args, { stdio: ['inherit', 'pipe', 'pipe'], ...options });
+        let lines = 0;
+        const onData = (chunk) => {
+            const text = chunk.toString();
+            lines += text.split('\n').length - 1;
+            process.stdout.write(text);
+        };
+        child.stdout.on('data', onData);
+        child.stderr.on('data', onData);
+        child.on('error', reject);
+        child.on('exit', (code) => {
+            if (code !== 0) {
+                reject(new Error(`${command} ${args.join(' ')} exited with code ${code}`));
+                return;
+            }
+            if (process.stdout.isTTY && lines > 0) process.stdout.write(`\x1b[${lines}A\x1b[0J`);
+            resolve();
+        });
+    });
+}
 
 try {
     console.log('🔨 Building WASM module...');
@@ -38,11 +61,11 @@ try {
 
     // Run zig build
     console.log('⚡ Running zig build...');
-    await execFileAsync('zig', ['build'], { cwd: solverDir });
+    await run('zig', ['build'], { cwd: solverDir });
 
     // Smoke-test before shipping
     console.log('🧪 Running solver smoke test...');
-    await execFileAsync('node', ['smoke-test.mjs'], { cwd: solverDir });
+    await run('node', ['smoke-test.mjs'], { cwd: solverDir });
     console.log('✅ Smoke test passed');
 
     // Copy the built WASM file
@@ -60,6 +83,7 @@ try {
     // Copy file
     console.log(`📦 Copying WASM file to: ${destPath}`);
     copyFileSync(srcPath, destPath);
+    chmodSync(destPath, 0o644);
 
     const bytes = readFileSync(destPath);
     const sha = createHash('sha256').update(bytes).digest('hex');
