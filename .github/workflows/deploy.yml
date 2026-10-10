@@ -37,7 +37,9 @@ jobs:
               run: nub run --node build
 
             - name: Deploy Worker
-              uses: cloudflare/wrangler-action@v4
-              with:
-                  apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-                  accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+              run: |
+                  subject="$(git log -1 --pretty=%s)"
+                  nubx wrangler deploy --message "$subject"
+              env:
+                  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+                  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
