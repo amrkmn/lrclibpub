@@ -28,3 +28,4 @@ solver/zig-out
 
 # Temp / ignored artifacts
 tmp/
+src/lib/wasm/solver.wasm

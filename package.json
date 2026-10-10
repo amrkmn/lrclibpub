@@ -4,8 +4,11 @@
     "private": true,
     "type": "module",
     "scripts": {
+        "predev": "node scripts/check-wasm.mjs",
         "dev": "vite dev",
+        "prebuild": "node scripts/check-wasm.mjs",
         "build": "vite build",
+        "prebuild:fresh": "node scripts/check-wasm.mjs",
         "build:fresh": "rm -r .svelte-kit/cloudflare && vite build",
         "build:wasm": "node scripts/build-wasm.mjs",
         "preview": "vite preview",
