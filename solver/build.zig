@@ -13,6 +13,10 @@ pub fn build(b: *std.Build) void {
             .root_source_file = b.path("src/main.zig"),
             .target = target,
             .optimize = .ReleaseFast,
+            // Strip debug info so the artifact is reproducible: otherwise
+            // Zig bakes absolute source paths into `.debug_line`, and every
+            // rebuild on a different machine/username shows up as a phantom diff.
+            .strip = true,
         }),
     });
 
