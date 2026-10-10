@@ -15,19 +15,24 @@ function run(command, args, options) {
     return new Promise((resolve, reject) => {
         const child = spawn(command, args, { stdio: ['inherit', 'pipe', 'pipe'], ...options });
         let lines = 0;
+
         const onData = (chunk) => {
             const text = chunk.toString();
             lines += text.split('\n').length - 1;
             process.stdout.write(text);
         };
+
         child.stdout.on('data', onData);
         child.stderr.on('data', onData);
         child.on('error', reject);
         child.on('exit', (code) => {
             if (code !== 0) {
+
                 reject(new Error(`${command} ${args.join(' ')} exited with code ${code}`));
+
                 return;
             }
+
             if (process.stdout.isTTY && lines > 0) process.stdout.write(`\x1b[${lines}A\x1b[0J`);
             resolve();
         });
