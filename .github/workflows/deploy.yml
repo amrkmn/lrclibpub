@@ -1,0 +1,43 @@
+name: Deploy
+
+on:
+    push:
+        branches: [master]
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+concurrency:
+    group: deploy
+    cancel-in-progress: false
+
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+        timeout-minutes: 60
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: mlugg/setup-zig@v2
+              with:
+                  version: 0.17.0
+
+            - uses: nubjs/setup-nub@v0
+              with:
+                  cache-dependency-path: nub.lock
+
+            - name: Install dependencies
+              run: nub ci
+
+            - name: Build solver.wasm
+              run: node scripts/build-wasm.mjs
+
+            - name: Build app
+              run: nub run --node build
+
+            - name: Deploy Worker
+              uses: cloudflare/wrangler-action@v4
+              with:
+                  apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+                  accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
