@@ -21,34 +21,41 @@ A modern web application for publishing lyrics to the LRCLIB database. Built wit
 2. Add lyrics by pasting text or uploading an LRC file
 3. Click "Publish Lyrics" and wait for the proof-of-work to complete
 
+## Package Manager
+
+This project uses [nub](https://nubjs.com/) as its package manager and script runner. Install it first, then use `nub` for all commands below. Don't use `npm`, `pnpm`, or `yarn`, since they won't respect `nub.lock`.
+
 ## Development
 
 ```bash
 # Install dependencies
-npm install
+nub install
+
+# Build the WebAssembly module (required before first dev/build)
+nub run build:wasm
 
 # Start development server
-npm run dev
+nub run dev
 
 # Build for production
-npm run build
+nub run build
 
 # Deploy to Cloudflare
-npm run deploy
+nub run deploy
 ```
 
 ## WebAssembly
 
-The application uses WebAssembly (written in Zig) for fast proof-of-work computation. A pre-built WASM module is included, so you don't need to rebuild it unless modifying the Zig code.
+The application uses WebAssembly (written in Zig) for fast proof-of-work computation. The compiled module (`src/lib/wasm/solver.wasm`) is not committed; it is generated from `solver/` and must be built before running `dev` or `build`. CI builds it on every deploy.
 
-**Prerequisites for WASM development:**
+**Prerequisites:**
 
-- Zig compiler (latest stable) - Download from: https://ziglang.org/download/
+- Zig 0.17.0 - Download from: https://ziglang.org/download/
 
-To rebuild WASM (requires Zig):
+To build the WASM module:
 
 ```bash
-npm run build:wasm
+nub run build:wasm
 ```
 
 ## License
