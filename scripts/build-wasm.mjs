@@ -27,7 +27,6 @@ function run(command, args, options) {
         child.on('error', reject);
         child.on('exit', (code) => {
             if (code !== 0) {
-
                 reject(new Error(`${command} ${args.join(' ')} exited with code ${code}`));
 
                 return;
