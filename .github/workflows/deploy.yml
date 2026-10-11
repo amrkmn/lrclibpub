@@ -25,14 +25,7 @@ jobs:
             - uses: mlugg/setup-zig@v2
               with:
                   version: ${{ env.ZIG_VERSION }}
-
-            - name: Cache Zig build artifacts
-              uses: actions/cache@v4
-              with:
-                  path: .zig-cache
-                  key: zig-local-cache-${{ env.ZIG_VERSION }}-${{ hashFiles('solver/build.zig', 'solver/src/**') }}
-                  restore-keys: |
-                      zig-local-cache-${{ env.ZIG_VERSION }}-
+                  cache-key: ${{ hashFiles('solver/build.zig', 'solver/src/**') }}
 
             - uses: nubjs/setup-nub@v0
               with:
