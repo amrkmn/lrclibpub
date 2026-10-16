@@ -10,7 +10,7 @@
         SearchIcon
     } from '$lib/components/icons';
     import { downloadFile, generateLRCContent, sanitizeFilename } from '$lib/lrc/parser';
-    import type { LyricResult, SearchParams } from '$lib/types';
+    import { USER_AGENT, type LyricResult, type SearchParams } from '$lib/types';
     import { onMount } from 'svelte';
 
     // Search form state
@@ -156,8 +156,11 @@
 
             if (searchParams.album_name) params.append('album_name', searchParams.album_name);
 
-            const response = await fetch(`/api/search?${params.toString()}`, {
-                method: 'GET'
+            const response = await fetch(`https://lrclib.net/api/search?${params.toString()}`, {
+                method: 'GET',
+                headers: {
+                    'Lrclib-Client': USER_AGENT
+                }
             });
 
             if (!response.ok) {

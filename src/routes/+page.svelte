@@ -6,7 +6,7 @@
     import { validateSyncedLyrics } from '$lib/lrc/validator';
     import { validateLyricsfileYaml } from '$lib/lyricsfile/validator';
     import { type ActiveSolve, startSolve } from '$lib/solver-pool';
-    import type { Challenge, FormData } from '$lib/types';
+    import { USER_AGENT, type Challenge, type FormData } from '$lib/types';
     import { numify } from 'numify';
     import { onDestroy, onMount } from 'svelte';
 
@@ -112,8 +112,11 @@
      */
     async function requestChallenge(): Promise<Challenge> {
         try {
-            const response = await fetch('/api/request-challenge', {
-                method: 'POST'
+            const response = await fetch('https://lrclib.net/api/request-challenge', {
+                method: 'POST',
+                headers: {
+                    'Lrclib-Client': USER_AGENT
+                }
             });
 
             if (!response.ok) {

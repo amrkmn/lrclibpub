@@ -1,3 +1,4 @@
+import { env } from '$env/dynamic/private';
 import { validateLRC } from '$lib/lrc/validator';
 import { validateLyricsfileYaml } from '$lib/lyricsfile/validator';
 import { USER_AGENT } from '$lib/types';
@@ -136,13 +137,19 @@ export const POST: RequestHandler = async ({ request }) => {
     }
 
     try {
+        const headers = new Headers({
+            'Content-Type': 'application/json',
+            'X-Publish-Token': publishToken,
+            'Lrclib-Client': USER_AGENT
+        });
+
+        if (env.LRCLIB_API_KEY) {
+            headers.set('Lrclib-Api-Key', env.LRCLIB_API_KEY);
+        }
+
         const response = await fetch('https://lrclib.net/api/publish', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Publish-Token': publishToken,
-                'Lrclib-Client': USER_AGENT
-            },
+            headers,
             body: JSON.stringify(lrclibBody)
         });
 
