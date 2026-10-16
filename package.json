@@ -25,20 +25,20 @@
         "yaml": "^2.9.1"
     },
     "devDependencies": {
-        "@oxlint/plugins": "1.86.0",
+        "@oxlint/plugins": "^1.88.0",
         "@sveltejs/adapter-cloudflare": "^7.2.9",
         "@sveltejs/kit": "^2.70.3",
         "@sveltejs/vite-plugin-svelte": "^5.1.1",
         "@tailwindcss/vite": "^4.3.3",
-        "oxfmt": "0.71.0",
-        "oxlint": "1.86.0",
+        "oxfmt": "^0.73.0",
+        "oxlint": "^1.88.0",
         "svelte": "^5.57.2",
         "svelte-check": "^4.7.6",
         "tailwindcss": "^4.3.3",
         "typescript": "^5.9.3",
         "vite": "^6.4.4",
-        "vite-plugin-devtools-json": "^1.1.1",
-        "wrangler": "^4.149.0"
+        "vite-plugin-devtools-json": "^1.1.2",
+        "wrangler": "^4.151.0"
     },
     "devEngines": {
         "packageManager": {
