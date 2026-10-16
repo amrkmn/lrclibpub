@@ -143,6 +143,12 @@ export const POST: RequestHandler = async ({ request }) => {
             'Lrclib-Client': USER_AGENT
         });
 
+        // Application ID from the developer portal (server-side registration).
+        // Always sent together with the API key; upstream rejects it alone.
+        if (env.LRCLIB_APP_ID) {
+            headers.set('Lrclib-App-Id', env.LRCLIB_APP_ID);
+        }
+
         if (env.LRCLIB_API_KEY) {
             headers.set('Lrclib-Api-Key', env.LRCLIB_API_KEY);
         }
