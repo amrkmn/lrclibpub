@@ -10,8 +10,9 @@
         SearchIcon
     } from '$lib/components/icons';
     import { downloadFile, generateLRCContent, sanitizeFilename } from '$lib/lrc/parser';
-    import { USER_AGENT, type LyricResult, type SearchParams } from '$lib/types';
-    import { onMount } from 'svelte';
+    import { type ActiveSolve, startSolve } from '$lib/solver-pool';
+    import { USER_AGENT, type Challenge, type LyricResult, type SearchParams } from '$lib/types';
+    import { onDestroy, onMount } from 'svelte';
 
     // Search form state
     let searchParams = $state<SearchParams>({
@@ -40,6 +41,17 @@
     let successTimeout: number;
 
     let copyTimeouts: { [key: string]: number } = {};
+
+    // Flag form state (inside the lyrics viewer modal)
+    let flagging = $state(false);
+    let flagReason = $state('');
+    let flagBusy = $state(false);
+    let flagStatus = $state<string | null>(null);
+
+    // Active solve; cancelled on unmount so workers don't leak.
+    let activeSolve: ActiveSolve | null = null;
+
+    onDestroy(() => activeSolve?.cancel());
 
     /**
      * Set an error message with auto-dismiss after 5 seconds
@@ -84,7 +96,98 @@
      * Close lyrics viewer
      */
     function closeLyricsViewer() {
+        closeFlag();
         viewingLyrics = null;
+    }
+
+    /**
+     * Open the flag form for the currently viewed lyrics
+     */
+    function openFlag() {
+        flagReason = '';
+        flagStatus = null;
+        flagging = true;
+    }
+
+    /**
+     * Close the flag form and cancel any in-progress solve
+     */
+    function closeFlag() {
+        activeSolve?.cancel();
+        activeSolve = null;
+        flagging = false;
+        flagBusy = false;
+        flagStatus = null;
+    }
+
+    /**
+     * Request a challenge, solve it, and submit the flag
+     */
+    async function submitFlag() {
+        if (!viewingLyrics || flagBusy) {
+            return;
+        }
+
+        const trackId = viewingLyrics.id;
+
+        try {
+            flagBusy = true;
+            flagStatus = 'Requesting challenge...';
+
+            const challengeResponse = await fetch('https://lrclib.net/api/request-challenge', {
+                method: 'POST',
+                headers: { 'Lrclib-Client': USER_AGENT }
+            });
+
+            if (!challengeResponse.ok) {
+                const errorData = await challengeResponse
+                    .json()
+                    .catch(() => ({ message: 'Failed to get challenge' }));
+
+                throw new Error(errorData.message || 'Failed to get challenge');
+            }
+
+            const challenge: Challenge = await challengeResponse.json();
+
+            flagStatus = 'Solving challenge...';
+
+            activeSolve = startSolve(challenge.prefix, challenge.target, ({ rate }) => {
+                flagStatus = `Solving challenge... (${Math.round(rate).toLocaleString()} H/s)`;
+            });
+
+            const { nonce } = await activeSolve.promise;
+            activeSolve = null;
+
+            flagStatus = 'Submitting flag...';
+
+            const response = await fetch('/api/flag', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Publish-Token': `${challenge.prefix}:${nonce}`
+                },
+                body: JSON.stringify({
+                    trackId,
+                    content: flagReason.trim() || undefined
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response
+                    .json()
+                    .catch(() => ({ message: 'Failed to submit flag' }));
+
+                throw new Error(errorData.message || 'Failed to submit flag');
+            }
+
+            closeFlag();
+            setSuccess('Flag submitted. Thank you for reporting!');
+        } catch (err) {
+            activeSolve = null;
+            flagBusy = false;
+            flagStatus = null;
+            setError(err instanceof Error ? err.message : 'Failed to submit flag');
+        }
     }
 
     /**
@@ -1049,10 +1152,69 @@
                 {/if}
             </div>
 
+            {#if flagging}
+                <!-- Flag form -->
+                <div class="p-6 border-t border-red-200 bg-red-50 shrink-0">
+                    <label for="flagReason" class="block text-sm font-medium mb-1 text-red-800"
+                        >Why are you reporting these lyrics?</label
+                    >
+                    <textarea
+                        id="flagReason"
+                        bind:value={flagReason}
+                        rows="2"
+                        disabled={flagBusy}
+                        placeholder="Wrong lyrics, wrong track, copyright violation... (optional)"
+                        class="w-full px-3 py-2 border border-red-200 rounded-md focus:outline-hidden focus:ring-2 focus:ring-red-500 bg-white"
+                    ></textarea>
+                    {#if flagStatus}
+                        <p class="text-sm text-red-700 mt-2">{flagStatus}</p>
+                    {/if}
+                    <div class="flex justify-end gap-2 mt-3">
+                        <button
+                            onclick={closeFlag}
+                            disabled={flagBusy}
+                            class="px-3 py-1.5 text-sm rounded-md border border-red-300 text-red-600 hover:bg-red-100 transition-colors cursor-pointer disabled:opacity-50"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onclick={submitFlag}
+                            disabled={flagBusy}
+                            class="px-3 py-1.5 text-sm rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors cursor-pointer disabled:opacity-50"
+                        >
+                            {flagBusy ? 'Submitting...' : 'Submit flag'}
+                        </button>
+                    </div>
+                </div>
+            {/if}
+
             <!-- Modal Footer -->
             <div
-                class="flex justify-end p-6 border-t border-indigo-200 bg-indigo-50 shrink-0"
-            ></div>
+                class="flex items-center justify-between p-6 border-t border-indigo-200 bg-indigo-50 shrink-0"
+            >
+                <button
+                    onclick={() => (flagging ? closeFlag() : openFlag())}
+                    class="flex items-center gap-2 px-3 py-1.5 text-sm rounded-md border border-red-300 text-red-600 bg-transparent hover:bg-red-50 transition-colors cursor-pointer"
+                    title="Report these lyrics"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke-width="1.5"
+                        stroke="currentColor"
+                        class="size-4"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M5 21V4m0 1h12l-2.5 3.5L17 12H5"
+                        />
+                    </svg>
+                    {flagging ? 'Close report' : 'Report lyrics'}
+                </button>
+                <span class="text-xs text-indigo-400">Track ID: {viewingLyrics.id}</span>
+            </div>
         </div>
     </div>
 {/if}
