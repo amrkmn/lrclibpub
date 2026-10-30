@@ -1,14 +1,15 @@
 <script lang="ts">
     import { resolve } from '$app/paths';
-    import Footer from '$lib/components/Footer.svelte';
-    import LrcTab from '$lib/components/LrcTab.svelte';
-    import LyricsfileTab from '$lib/components/LyricsfileTab.svelte';
-    import { validateSyncedLyrics } from '$lib/lrc/validator';
-    import { validateLyricsfileYaml } from '$lib/lyricsfile/validator';
-    import { type ActiveSolve, startSolve } from '$lib/solver-pool';
-    import { USER_AGENT, type Challenge, type FormData } from '$lib/types';
     import { numify } from 'numify';
     import { onDestroy, onMount } from 'svelte';
+
+    import Footer from '#lib/components/Footer.svelte';
+    import LrcTab from '#lib/components/LrcTab.svelte';
+    import LyricsfileTab from '#lib/components/LyricsfileTab.svelte';
+    import { validateSyncedLyrics } from '#lib/lrc/validator.js';
+    import { validateLyricsfileYaml } from '#lib/lyricsfile/validator.js';
+    import { type ActiveSolve, startSolve } from '#lib/solver-pool.js';
+    import { USER_AGENT, type Challenge, type FormData } from '#lib/types.js';
 
     // Initialize form data with default values
     let formData = $state<FormData>({
@@ -336,12 +337,12 @@
                         stroke-linecap="round"
                         stroke-linejoin="round"
                         d="m9 9 6-6m0 0 6 6m-6-6v12a6 6 0 0 1-12 0v-3"
-                    />
+                    ></path>
                 </svg>
                 LRCLIBpub
             </h1>
             <a
-                href={resolve('/search')}
+                href={resolve('search')}
                 class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
             >
                 <svg
@@ -356,7 +357,7 @@
                         stroke-linecap="round"
                         stroke-linejoin="round"
                         d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
-                    />
+                    ></path>
                 </svg>
                 Search Lyrics
             </a>
@@ -401,7 +402,7 @@
                                     stroke-linecap="round"
                                     stroke-linejoin="round"
                                     d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                                />
+                                ></path>
                             </svg>
                             {error}
                         </div>
@@ -424,7 +425,7 @@
                                     stroke-linecap="round"
                                     stroke-linejoin="round"
                                     d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                                />
+                                ></path>
                             </svg>
                             <div>
                                 <div class="font-medium">Lyrics published successfully!</div>
@@ -604,7 +605,7 @@
                                 stroke-linecap="round"
                                 stroke-linejoin="round"
                                 d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"
-                            />
+                            ></path>
                         </svg>
                         <div class="text-sm text-red-800">
                             <p class="font-semibold mb-1">Before You Proceed</p>

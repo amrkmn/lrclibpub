@@ -1,6 +1,8 @@
 <script lang="ts">
     import { resolve } from '$app/paths';
-    import Footer from '$lib/components/Footer.svelte';
+    import { onDestroy, onMount } from 'svelte';
+
+    import Footer from '#lib/components/Footer.svelte';
     import {
         ClockIcon,
         CopyIcon,
@@ -8,11 +10,10 @@
         DownloadIcon,
         EyeIcon,
         SearchIcon
-    } from '$lib/components/icons';
-    import { downloadFile, generateLRCContent, sanitizeFilename } from '$lib/lrc/parser';
-    import { type ActiveSolve, startSolve } from '$lib/solver-pool';
-    import { USER_AGENT, type Challenge, type LyricResult, type SearchParams } from '$lib/types';
-    import { onDestroy, onMount } from 'svelte';
+    } from '#lib/components/icons/index.js';
+    import { downloadFile, generateLRCContent, sanitizeFilename } from '#lib/lrc/parser.js';
+    import { type ActiveSolve, startSolve } from '#lib/solver-pool.js';
+    import { USER_AGENT, type Challenge, type LyricResult, type SearchParams } from '#lib/types.js';
 
     // Search form state
     let searchParams = $state<SearchParams>({

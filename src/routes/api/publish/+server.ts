@@ -1,8 +1,8 @@
-import { env } from '$env/dynamic/private';
-import { validateLRC } from '$lib/lrc/validator';
-import { validateLyricsfileYaml } from '$lib/lyricsfile/validator';
-import { USER_AGENT } from '$lib/types';
-import { json } from '@sveltejs/kit';
+import { LRCLIB_APP_ID, LRCLIB_API_KEY } from '$app/env/private';
+
+import { validateLRC } from '#lib/lrc/validator.js';
+import { validateLyricsfileYaml } from '#lib/lyricsfile/validator.js';
+import { USER_AGENT } from '#lib/types.js';
 
 import type { RequestHandler } from './$types';
 
@@ -10,7 +10,7 @@ export const POST: RequestHandler = async ({ request }) => {
     const publishToken = request.headers.get('X-Publish-Token');
 
     if (!publishToken) {
-        return json(
+        return Response.json(
             {
                 message: 'Missing publish token',
                 name: 'ValidationError',
@@ -25,7 +25,7 @@ export const POST: RequestHandler = async ({ request }) => {
     try {
         body = await request.json();
     } catch {
-        return json(
+        return Response.json(
             {
                 message: 'Invalid JSON body',
                 name: 'ValidationError',
@@ -40,7 +40,7 @@ export const POST: RequestHandler = async ({ request }) => {
 
     // Validate required fields
     if (!trackName?.trim()) {
-        return json(
+        return Response.json(
             {
                 message: 'Track name is required',
                 name: 'ValidationError',
@@ -51,7 +51,7 @@ export const POST: RequestHandler = async ({ request }) => {
     }
 
     if (!artistName?.trim()) {
-        return json(
+        return Response.json(
             {
                 message: 'Artist name is required',
                 name: 'ValidationError',
@@ -78,7 +78,7 @@ export const POST: RequestHandler = async ({ request }) => {
                 .map((i) => `${i.path}: ${i.message}`)
                 .join('; ');
 
-            return json(
+            return Response.json(
                 {
                     message: `Lyricsfile validation failed: ${errorMessages}`,
                     name: 'ValidationError',
@@ -97,7 +97,7 @@ export const POST: RequestHandler = async ({ request }) => {
                 .map((issue) => `Line ${issue.line}: ${issue.message}`)
                 .join('; ');
 
-            return json(
+            return Response.json(
                 {
                     message: `LRC validation failed: ${errorMessages}`,
                     name: 'ValidationError',
@@ -145,12 +145,12 @@ export const POST: RequestHandler = async ({ request }) => {
 
         // Application ID from the developer portal (server-side registration).
         // Always sent together with the API key; upstream rejects it alone.
-        if (env.LRCLIB_APP_ID) {
-            headers.set('Lrclib-App-Id', env.LRCLIB_APP_ID);
+        if (LRCLIB_APP_ID) {
+            headers.set('Lrclib-App-Id', LRCLIB_APP_ID);
         }
 
-        if (env.LRCLIB_API_KEY) {
-            headers.set('Lrclib-Api-Key', env.LRCLIB_API_KEY);
+        if (LRCLIB_API_KEY) {
+            headers.set('Lrclib-Api-Key', LRCLIB_API_KEY);
         }
 
         const response = await fetch('https://lrclib.net/api/publish', {
@@ -175,13 +175,13 @@ export const POST: RequestHandler = async ({ request }) => {
                 statusCode: response.status
             }));
 
-            return json(errorData, { status: response.status });
+            return Response.json(errorData, { status: response.status });
         }
 
-        return json(data);
+        return Response.json(data);
     } catch (err) {
         if (err instanceof Error && err.message.includes('fetch')) {
-            return json(
+            return Response.json(
                 {
                     message: 'Failed to connect to LRCLIB API',
                     name: 'UnknownError',
@@ -191,7 +191,7 @@ export const POST: RequestHandler = async ({ request }) => {
             );
         }
 
-        return json(
+        return Response.json(
             {
                 message: 'An unexpected error occurred',
                 name: 'UnknownError',

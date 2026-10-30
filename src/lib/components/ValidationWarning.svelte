@@ -1,6 +1,6 @@
 <script lang="ts">
-    import type { IssueType, LRCValidationResult } from '$lib/lrc/validator';
-    import { getIssueTypeLabel, getValidationSummary } from '$lib/lrc/validator';
+    import type { IssueType, LRCValidationResult } from '#lib/lrc/validator.js';
+    import { getIssueTypeLabel, getValidationSummary } from '#lib/lrc/validator.js';
 
     interface Props {
         validationResult: LRCValidationResult;

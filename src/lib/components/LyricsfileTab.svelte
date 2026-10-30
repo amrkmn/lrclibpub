@@ -1,9 +1,9 @@
 <script lang="ts">
-    import { formatMs } from '$lib/lyricsfile/parser';
+    import { formatMs } from '#lib/lyricsfile/parser.js';
     import {
         validateLyricsfileYaml,
         type LyricsfileValidationResult
-    } from '$lib/lyricsfile/validator';
+    } from '#lib/lyricsfile/validator.js';
 
     let {
         lyricsfile = $bindable(''),

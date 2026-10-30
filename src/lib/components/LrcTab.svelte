@@ -1,8 +1,8 @@
 <script lang="ts">
-    import ValidationWarning from '$lib/components/ValidationWarning.svelte';
-    import { normalizeAndSortLRC, stripELRCWordTimestamps } from '$lib/lrc/normalizer';
-    import { parseLRCFile } from '$lib/lrc/parser';
-    import { validateSyncedLyrics, type LRCValidationResult } from '$lib/lrc/validator';
+    import ValidationWarning from '#lib/components/ValidationWarning.svelte';
+    import { normalizeAndSortLRC, stripELRCWordTimestamps } from '#lib/lrc/normalizer.js';
+    import { parseLRCFile } from '#lib/lrc/parser.js';
+    import { validateSyncedLyrics, type LRCValidationResult } from '#lib/lrc/validator.js';
 
     let {
         plainLyrics = $bindable(''),
