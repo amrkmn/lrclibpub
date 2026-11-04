@@ -50,7 +50,7 @@ The application uses WebAssembly (written in Zig) for fast proof-of-work computa
 
 **Prerequisites:**
 
-- Zig 0.17.0 - Download from: https://ziglang.org/download/
+- Zig 0.17.1 - Download from: https://ziglang.org/download/
 
 To build the WASM module:
 
