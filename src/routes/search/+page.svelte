@@ -12,8 +12,15 @@
         SearchIcon
     } from '#lib/components/icons/index.js';
     import { downloadFile, generateLRCContent, sanitizeFilename } from '#lib/lrc/parser.js';
+    import { getLyricsById, searchLyrics } from '#lib/lrclib/search.js';
     import { type ActiveSolve, startSolve } from '#lib/solver-pool.js';
-    import { USER_AGENT, type Challenge, type LyricResult, type SearchParams } from '#lib/types.js';
+    import {
+        USER_AGENT,
+        type Challenge,
+        type LyricResult,
+        type SearchParams,
+        type TrackSummary
+    } from '#lib/types.js';
 
     // Search form state
     let searchParams = $state<SearchParams>({
@@ -27,11 +34,14 @@
     let isSearching = $state(false);
     let error = $state<string | null>(null);
     let success = $state<string | null>(null);
-    let results = $state<LyricResult[]>([]);
+    let results = $state<TrackSummary[]>([]);
     let hasSearched = $state(false);
     let searchMode = $state<'general' | 'specific'>('general');
     let viewingLyrics = $state<LyricResult | null>(null);
+    let loadingLyricsId = $state<number | null>(null);
     let wasAutoSwitched = $state(false);
+
+    const lyricsCache = new Map<number, LyricResult>();
 
     let copiedStates = $state<{ [key: string]: boolean }>({});
 
@@ -79,16 +89,59 @@
     }
 
     /**
-     * View full lyrics in a modal
+     * View full lyrics in a modal, fetching by ID if needed (v2 search returns lightweight summaries)
      */
-    function viewLyrics(result: LyricResult) {
-        viewingLyrics = result;
+    async function viewLyrics(result: TrackSummary) {
+        if (loadingLyricsId !== null) return;
 
-        if (result.lyricsfile) {
+        if (lyricsCache.has(result.id)) {
+            openLyricsModal(lyricsCache.get(result.id)!);
+
+            return;
+        }
+
+        if (result.plainLyrics || result.syncedLyrics || result.lyricsfile) {
+            const lyricResult: LyricResult = {
+                id: result.id,
+                trackName: result.trackName,
+                artistName: result.artistName,
+                albumName: result.albumName ?? undefined,
+                duration: result.duration ?? undefined,
+                plainLyrics: result.plainLyrics ?? undefined,
+                syncedLyrics: result.syncedLyrics ?? undefined,
+                lyricsfile: result.lyricsfile ?? null,
+                instrumental: result.instrumental,
+                hasWordSync: result.hasWordSync
+            };
+
+            lyricsCache.set(result.id, lyricResult);
+            openLyricsModal(lyricResult);
+
+            return;
+        }
+
+        loadingLyricsId = result.id;
+
+        try {
+            const lyrics = await getLyricsById(result.id);
+            lyricsCache.set(result.id, lyrics);
+            openLyricsModal(lyrics);
+        } catch (err) {
+            console.error('Error fetching lyrics:', err);
+            setError(err instanceof Error ? err.message : 'Failed to load lyrics');
+        } finally {
+            loadingLyricsId = null;
+        }
+    }
+
+    function openLyricsModal(lyrics: LyricResult) {
+        viewingLyrics = lyrics;
+
+        if (lyrics.lyricsfile) {
             activeTab = 'lyricsfile';
-        } else if (result.syncedLyrics) {
+        } else if (lyrics.syncedLyrics) {
             activeTab = 'synced';
-        } else if (result.plainLyrics) {
+        } else if (lyrics.plainLyrics) {
             activeTab = 'plain';
         }
     }
@@ -228,6 +281,7 @@
             album_name: ''
         };
         results = [];
+        lyricsCache.clear();
         hasSearched = false;
         error = null;
         wasAutoSwitched = false;
@@ -236,10 +290,10 @@
     }
 
     /**
-     * Perform search against LRCLIB API
+     * Perform search using LRCLIB v2 search API with v1 fallback
      */
     async function performSearch() {
-        if (!searchParams.q && !searchParams.track_name) {
+        if (!searchParams.q?.trim() && !searchParams.track_name?.trim()) {
             setError('Please provide either a search term or track name');
 
             return;
@@ -247,33 +301,28 @@
 
         isSearching = true;
         error = null;
+        lyricsCache.clear();
 
         try {
-            // Build query parameters
-            const params = new URLSearchParams();
+            const data = await searchLyrics(searchParams);
 
-            if (searchParams.q) params.append('q', searchParams.q);
-
-            if (searchParams.track_name) params.append('track_name', searchParams.track_name);
-
-            if (searchParams.artist_name) params.append('artist_name', searchParams.artist_name);
-
-            if (searchParams.album_name) params.append('album_name', searchParams.album_name);
-
-            const response = await fetch(`https://lrclib.net/api/search?${params.toString()}`, {
-                method: 'GET',
-                headers: {
-                    'Lrclib-Client': USER_AGENT
+            for (const item of data) {
+                if (item.plainLyrics || item.syncedLyrics || item.lyricsfile) {
+                    lyricsCache.set(item.id, {
+                        id: item.id,
+                        trackName: item.trackName,
+                        artistName: item.artistName,
+                        albumName: item.albumName ?? undefined,
+                        duration: item.duration ?? undefined,
+                        plainLyrics: item.plainLyrics ?? undefined,
+                        syncedLyrics: item.syncedLyrics ?? undefined,
+                        lyricsfile: item.lyricsfile ?? null,
+                        instrumental: item.instrumental,
+                        hasWordSync: item.hasWordSync
+                    });
                 }
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ message: 'Search failed' }));
-
-                throw new Error(errorData.message || `Search failed: ${response.status}`);
             }
 
-            const data: LyricResult[] = await response.json();
             results = data;
             hasSearched = true;
         } catch (err) {
@@ -296,7 +345,7 @@
     /**
      * Format duration from seconds to MM:SS
      */
-    function formatDuration(duration?: number): string {
+    function formatDuration(duration?: number | null): string {
         if (!duration) return 'Unknown';
         const minutes = Math.floor(duration / 60);
         const remainingSeconds = Math.floor(duration % 60);
@@ -673,13 +722,19 @@
                                                         >Instrumental</span
                                                     >
                                                 {:else}
-                                                    {#if result.lyricsfile}
+                                                    {#if result.hasWordSync}
+                                                        <span
+                                                            class="px-2 py-1 bg-amber-100 text-amber-800 rounded-md text-xs font-semibold flex items-center gap-1"
+                                                            >Word Synced</span
+                                                        >
+                                                    {/if}
+                                                    {#if result.hasLyricsfile}
                                                         <span
                                                             class="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-md text-xs flex items-center gap-1"
                                                             >Lyricsfile</span
                                                         >
                                                     {/if}
-                                                    {#if result.syncedLyrics}
+                                                    {#if result.hasSyncedLyrics}
                                                         <span
                                                             class="px-2 py-1 bg-blue-100 text-blue-700 rounded-md text-xs flex items-center gap-1"
                                                         >
@@ -687,7 +742,7 @@
                                                             Synced
                                                         </span>
                                                     {/if}
-                                                    {#if result.plainLyrics && !result.syncedLyrics}
+                                                    {#if result.hasPlainLyrics && !result.hasSyncedLyrics}
                                                         <span
                                                             class="px-2 py-1 bg-purple-100 text-purple-700 rounded-md text-xs flex items-center gap-1"
                                                         >
@@ -699,13 +754,38 @@
                                             </div>
                                         </div>
                                     </div>
-                                    {#if !result.instrumental && (result.plainLyrics || result.syncedLyrics || result.lyricsfile)}
+                                    {#if !result.instrumental && (result.hasPlainLyrics || result.hasSyncedLyrics || result.hasLyricsfile)}
                                         <button
                                             onclick={() => viewLyrics(result)}
-                                            class="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 transition-colors cursor-pointer"
+                                            disabled={loadingLyricsId === result.id}
+                                            class="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700 disabled:bg-indigo-400 disabled:cursor-not-allowed transition-colors cursor-pointer"
                                         >
-                                            <EyeIcon />
-                                            View Full
+                                            {#if loadingLyricsId === result.id}
+                                                <svg
+                                                    class="animate-spin size-4"
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <circle
+                                                        class="opacity-25"
+                                                        cx="12"
+                                                        cy="12"
+                                                        r="10"
+                                                        stroke="currentColor"
+                                                        stroke-width="4"
+                                                    ></circle>
+                                                    <path
+                                                        class="opacity-75"
+                                                        fill="currentColor"
+                                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                                    ></path>
+                                                </svg>
+                                                Loading...
+                                            {:else}
+                                                <EyeIcon />
+                                                View Full
+                                            {/if}
                                         </button>
                                     {/if}
                                 </div>
